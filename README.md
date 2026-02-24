@@ -172,6 +172,186 @@ flutter run
 
 ---
 
+## ¿Para qué sirve cada archivo?
+
+### `main.dart`
+
+**Responsabilidad:** punto de entrada de la app.
+
+- Inicializa Flutter
+- Aplica el tema global
+- Define la pantalla inicial (`LoginScreen`)
+- No tiene lógica de negocio
+
+**Arquitectura:** Capa de presentación (root)
+
+---
+
+### CORE (código reutilizable, transversal)
+
+#### `core/constants/`
+
+##### `app_spacing.dart`
+
+Constantes de espaciado (`sm`, `md`, `lg`, etc.)
+
+- Evita números mágicos
+- Mantiene consistencia visual
+- Cambias el diseño desde un solo lugar
+
+#### `core/errors/`
+
+##### `exceptions.dart`
+
+Define errores personalizados:
+
+- `ServerException`
+- `UnauthorizedException`
+- etc.
+
+- Evita `throw Exception()` genérico
+- Permite manejar errores por tipo
+
+**Arquitectura:** Soporte transversal
+
+#### `core/network/`
+
+##### `api_client.dart`
+
+Cliente HTTP base:
+
+- Configura `baseUrl`
+- Headers
+- Manejo de status codes
+
+- Centraliza el consumo de APIs
+- Ninguna feature usa `http` directo
+
+##### `network_info.dart`
+
+Verifica conexión a internet.
+
+- Permite decidir si usar API o cache
+- Importante para apps reales
+
+#### `core/themes/`
+
+##### `app_colors.dart`
+
+Colores oficiales de la app.
+
+- Evita colores hardcodeados
+- Mantiene identidad visual
+
+##### `app_text_styles.dart`
+
+Estilos de texto centralizados.
+
+- Misma tipografía en toda la app
+- Cambios globales fáciles
+
+##### `app_theme.dart`
+
+`ThemeData` completo de Flutter.
+
+- Configura inputs, botones, textos
+- Se usa en `MaterialApp`
+
+#### `core/utils/`
+
+##### `env.dart`
+
+Carga variables del archivo `.env`.
+
+- Nunca subes credenciales al repo
+- Cambias entornos sin tocar código
+
+#### `core/widgets/`
+
+##### `primary_button.dart`
+
+Botón reutilizable con estilo oficial.
+
+- UI consistente
+- Menos código duplicado
+
+---
+
+### FEATURES / Ejemplo con AUTH (login)
+
+#### `auth/data/` — capa de datos
+
+##### `datasources/auth_remote_datasource.dart`
+
+Llama directamente a la API.
+
+- Construye requests
+- Parsea respuestas
+- Maneja errores HTTP
+
+- Es la única que conoce la API
+- No tiene lógica de negocio
+
+##### `models/login_request_model.dart`
+
+Modelo de datos para enviar al backend.
+
+- Convierte Dart ↔ JSON
+- No se usa en UI
+
+##### `repositories/auth_repository_impl.dart`
+
+Implementa el contrato del dominio.
+
+- Decide de dónde vienen los datos
+- Puede cambiar API por cache sin afectar UI
+
+#### `auth/domain/` — lógica de negocio
+
+##### `entities/user_entity.dart`
+
+Entidad pura del negocio.
+
+- No depende de Flutter
+- No depende de API
+- Representa conceptos reales
+
+##### `repositories/auth_repository.dart`
+
+Contrato del repositorio.
+
+- El dominio no sabe cómo se obtienen los datos
+- Solo define qué se puede hacer
+
+##### `usecases/login_usecase.dart`
+
+Regla de negocio:
+
+- "Qué significa hacer login"
+- Orquesta repositorio + validaciones
+
+#### `auth/presentation/` — UI
+
+##### `view/login_screen.dart`
+
+Pantalla visual.
+
+- Solo UI
+- No lógica de negocio
+- Escucha al ViewModel
+
+##### `viewmodel/login_viewmodel.dart`
+
+Estado y lógica de presentación.
+
+- Valida campos vacíos
+- Llama al use case
+- Expone `errorMessage`
+
+**Arquitectura:** MVVM + Clean Architecture
+
+---
+
 ## Notas finales
 
 - Cualquier cambio importante en dependencias, assets o fonts debe reflejarse correctamente en `pubspec.yaml`.
