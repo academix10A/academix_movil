@@ -1,6 +1,26 @@
 import 'package:flutter/material.dart';
+import 'core/themes/app_theme.dart';
+import 'core/network/dio_client.dart';
+import 'features/auth/presentation/view/login_screen.dart';
+import 'core/routes/app_routes.dart';
+import 'features/home/presentation/view/main_screen.dart';
+import 'features/library/presentation/view/book_detail_screen.dart';
+import 'features/note/presentation/view/note_detail_screen.dart';
+import 'features/exam/presentation/view/exam_take_screen.dart';
+import 'features/exam/presentation/view/exam_result_screen.dart';
+import 'features/profile/presentation/view/settings_screen.dart';
+import 'features/profile/presentation/view/premium_screen.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'features/library/presentation/viewmodel/library_viewmodel.dart';
+import 'features/note/presentation/viewmodel/notes_viewmodel.dart';
+import 'features/exam/presentation/viewmodel/exams_viewmodel.dart';
 
-void main() => runApp(const MyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
+  DioClient.init();
+  runApp(const MyApp());
+}
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -9,235 +29,52 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Academix',
-      theme: ThemeData(
-        scaffoldBackgroundColor: const Color(0xFF181935),
-        fontFamily: 'RedHatDisplay',
-      ),
-      home: const LoginScreen(),
-    );
-  }
-}
-
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
-
-  @override
-  State<LoginScreen> createState() => _LoginScreenState();
-}
-
-class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passController = TextEditingController();
-
-  String errorMessage = '';
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Logo y título
-              const Text(
-                "ACADEMIX",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 48,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF00CED1),
-                  fontFamily: 'ArchivoBlack',
-                  letterSpacing: 2,
-                ),
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.darkTheme,
+      initialRoute: AppRoutes.login,
+      onGenerateRoute: (settings) {
+        switch (settings.name) {
+          case AppRoutes.login:
+            return MaterialPageRoute(builder: (_) => const LoginScreen());
+          case AppRoutes.main:
+            return MaterialPageRoute(builder: (_) => const MainScreen());
+          case AppRoutes.bookDetail:
+            final resource = settings.arguments as LibraryResource;
+            return MaterialPageRoute(
+              builder: (_) => BookDetailScreen(resource: resource),
+            );
+          case AppRoutes.noteDetail:
+            final note = settings.arguments as NoteItem;
+            return MaterialPageRoute(
+              builder: (_) => NoteDetailScreen(note: note),
+            );
+          case AppRoutes.examTake:
+            final exam = settings.arguments as ExamItem;
+            return MaterialPageRoute(
+              builder: (_) => ExamTakeScreen(exam: exam),
+            );
+          case AppRoutes.examResult:
+            final args = settings.arguments as Map<String, dynamic>;
+            final exam = args["exam"] as ExamItem?;
+            final completedExam = args["completedExam"] as CompletedExamItem?;
+            return MaterialPageRoute(
+              builder: (_) => ExamResultScreen(
+                exam: exam,
+                completedExam: completedExam,
+                score: args["score"] as int,
+                grade: args["grade"] as String,
+                correctAnswers: args["correctAnswers"] as int,
+                totalQuestions: args["totalQuestions"] as int,
               ),
-              const SizedBox(height: 8),
-              const Text(
-                "Tu biblioteca virtual colaborativa",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFFF0F2F5),
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-              const SizedBox(height: 48),
-              
-              // Campo de correo electrónico
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "Correo electrónico",
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFFF0F2F5),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: emailController,
-                    style: const TextStyle(color: Color(0xFFF0F2F5)),
-                    decoration: InputDecoration(
-                      hintText: "tucorreo@.com",
-                      hintStyle: const TextStyle(
-                        color: Color(0xFF9A9DB5),
-                        fontSize: 14,
-                      ),
-                      filled: true,
-                      fillColor: const Color(0xFFF0F2F5),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              
-              // Campo de contraseña
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "Contraseña",
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFFF0F2F5),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: passController,
-                    obscureText: true,
-                    style: const TextStyle(color: Color(0xFFF0F2F5)),
-                    decoration: InputDecoration(
-                      hintText: "Mínimo 8 caracteres",
-                      hintStyle: const TextStyle(
-                        color: Color(0xFF9A9DB5),
-                        fontSize: 14,
-                      ),
-                      filled: true,
-                      fillColor: const Color(0xFFF0F2F5),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              
-              // Link de olvidar contraseña
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {},
-                  child: const Text(
-                    "¿Olvidaste tu contraseña?",
-                    style: TextStyle(
-                      color: Color(0xFF00B2D6),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              
-              // Botón de iniciar sesión
-              ElevatedButton(
-                onPressed: () {
-                  if (emailController.text.isEmpty ||
-                      passController.text.isEmpty) {
-                    setState(() {
-                      errorMessage = 'Todos los campos son obligatorios';
-                    });
-                  } else {
-                    setState(() {
-                      errorMessage = 'Acceso concedido';
-                    });
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF00CED1),
-                  foregroundColor: const Color(0xFF181935),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
-                ),
-                child: const Text(
-                  "Iniciar Sesión",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              
-              // Link de registro
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    "¿No tienes cuenta? ",
-                    style: TextStyle(
-                      color: Color(0xFF9A9DB5),
-                      fontSize: 14,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {},
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: const Text(
-                      "Regístrate",
-                      style: TextStyle(
-                        color: Color(0xFF00B2D6),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              
-              if (errorMessage.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 16),
-                  child: Text(
-                    errorMessage,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Color(0xFFFF5252),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
+            );
+          case AppRoutes.settings:
+            return MaterialPageRoute(builder: (_) => const SettingsScreen());
+          case AppRoutes.premium:
+            return MaterialPageRoute(builder: (_) => const PremiumScreen());
+          default:
+            return MaterialPageRoute(builder: (_) => const LoginScreen());
+        }
+      },
     );
   }
 }
