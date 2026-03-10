@@ -70,7 +70,7 @@ Crea tu rama de trabajo:
 ```bash
 git checkout -b feature/nombre-descriptivo
 ```
-
+ 
 **Ejemplo:**
 ```bash
 git checkout -b feature/login-ui
