@@ -14,6 +14,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'features/library/presentation/viewmodel/library_viewmodel.dart';
 import 'features/note/presentation/viewmodel/notes_viewmodel.dart';
 import 'features/exam/presentation/viewmodel/exams_viewmodel.dart';
+import 'features/auth/presentation/view/register_screen.dart';
+import 'features/auth/presentation/view/forgot_password_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -71,6 +73,10 @@ class MyApp extends StatelessWidget {
             return MaterialPageRoute(builder: (_) => const SettingsScreen());
           case AppRoutes.premium:
             return MaterialPageRoute(builder: (_) => const PremiumScreen());
+          case AppRoutes.register:
+            return MaterialPageRoute(builder: (_) => const RegisterScreen());
+          case AppRoutes.forgotPassword:
+            return MaterialPageRoute(builder: (_) => const ForgotPasswordScreen());
           default:
             return MaterialPageRoute(builder: (_) => const LoginScreen());
         }
