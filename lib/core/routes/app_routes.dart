@@ -18,6 +18,8 @@ abstract class AppRoutes {
   static const String noteDetail = '/note-detail';
   static const String examTake = '/exam-take';
   static const String examResult = '/exam-result';
+  static const String register = '/register';
+  static const String forgotPassword = '/forgot-password';
 }
 
 // ─── Navigation Helper ─────────────────────────────────────────────────────
