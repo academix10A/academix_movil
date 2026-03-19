@@ -16,6 +16,14 @@ import 'features/note/presentation/viewmodel/notes_viewmodel.dart';
 import 'features/exam/presentation/viewmodel/exams_viewmodel.dart';
 import 'features/auth/presentation/view/register_screen.dart';
 import 'features/auth/presentation/view/forgot_password_screen.dart';
+import 'features/auth/presentation/view/splash_screen.dart';
+import 'features/library/presentation/view/favorites_screen.dart';
+import 'features/home/presentation/view/offline_content_screen.dart';
+import 'features/search/presentation/view/search_screen.dart';
+import 'features/ai/presentation/view/ai_chat_screen.dart';
+import 'features/exam/presentation/view/exam_history_screen.dart';
+import 'features/tema/presentation/view/subtema_screen.dart';
+import 'features/tema/presentation/view/temas_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,13 +41,21 @@ class MyApp extends StatelessWidget {
       title: 'Academix',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
-      initialRoute: AppRoutes.login,
+      initialRoute: AppRoutes.splash,
       onGenerateRoute: (settings) {
         switch (settings.name) {
           case AppRoutes.login:
             return MaterialPageRoute(builder: (_) => const LoginScreen());
           case AppRoutes.main:
             return MaterialPageRoute(builder: (_) => const MainScreen());
+          case AppRoutes.splash:
+            return MaterialPageRoute(builder: (_) => const SplashScreen());
+          case AppRoutes.search:
+            return MaterialPageRoute(builder: (_) => const SearchScreen());
+          case AppRoutes.favorites:
+            return MaterialPageRoute(builder: (_) => const FavoritesScreen());
+          case AppRoutes.offline:
+            return MaterialPageRoute(builder: (_) => const OfflineContentScreen());
           case AppRoutes.bookDetail:
             final resource = settings.arguments as LibraryResource;
             return MaterialPageRoute(
@@ -77,6 +93,19 @@ class MyApp extends StatelessWidget {
             return MaterialPageRoute(builder: (_) => const RegisterScreen());
           case AppRoutes.forgotPassword:
             return MaterialPageRoute(builder: (_) => const ForgotPasswordScreen());
+          case AppRoutes.temaDetail:
+            final args = settings.arguments as Map<String, dynamic>? ?? {};
+            final temaId = args['temaId'] as String;
+            final temaTitle = args['temaTitle'] as String;
+            return MaterialPageRoute(
+              builder: (_) => SubtemaScreen(temaId: temaId, temaTitle: temaTitle),
+            );
+          case AppRoutes.aiChat:
+            return MaterialPageRoute(builder: (_) => const AiChatScreen());
+          case AppRoutes.examHistory:
+            return MaterialPageRoute(builder: (_) => const ExamHistoryScreen());
+          case AppRoutes.temas:
+            return MaterialPageRoute(builder: (_) => const TemasScreen());
           default:
             return MaterialPageRoute(builder: (_) => const LoginScreen());
         }
@@ -84,3 +113,4 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+

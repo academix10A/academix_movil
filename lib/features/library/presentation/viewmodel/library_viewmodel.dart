@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:academix/core/routes/app_routes.dart';
-import 'package:academix/features/library/presentation/view/book_detail_screen.dart';
 import 'package:academix/features/library/domain/entities/library_entity.dart';
 import 'package:academix/features/library/data/datasources/library_remote_datasource.dart';
 
@@ -35,6 +34,7 @@ class LibraryResource {
 }
 
 class LibraryViewModel {
+
   final TextEditingController searchController = TextEditingController();
   final ValueNotifier<String> selectedCategory = ValueNotifier<String>('Todos');
   final ValueNotifier<List<LibraryResource>> filteredResources =
@@ -43,7 +43,8 @@ class LibraryViewModel {
   final ValueNotifier<bool> isLoading = ValueNotifier<bool>(false);
   final ValueNotifier<String?> errorMessage = ValueNotifier<String?>(null);
 
-  List<String> categories = ['Todos'];
+  final ValueNotifier<List<String>> categories =
+    ValueNotifier<List<String>>(['Todos']);
   
   final LibraryRemoteDataSource _remoteDataSource = LibraryRemoteDataSource();
   List<LibraryResource> _allResources = [];
@@ -57,22 +58,28 @@ class LibraryViewModel {
   Future<void> loadResources() async {
     isLoading.value = true;
     errorMessage.value = null;
-    
+
     try {
-      final entities = await _remoteDataSource.getResources();
-      
-      // Convertir entities a recursos locales
-      _allResources = entities
-          .map((e) => LibraryResource.fromEntity(e))
-          .toList();
-      
-      // Actualizar categorías únicas
+      final entities = await _remoteDataSource.getResourcesFromTemas();
+
+      _allResources = entities.map((e) {
+        return LibraryResource(
+          id: e.id.toString(),
+          title: e.titulo,
+          category: e.tema,
+          description: e.descripcion,
+          durationMinutes: 30,
+          pages: 10,
+        );
+      }).toList();
+
       final uniqueCategories = entities
-          .map((e) => e.category)
-          .toSet()
-          .toList();
-      categories = ['Todos', ...uniqueCategories];
-      
+        .map((e) => e.tema)
+        .toSet()
+        .toList();
+
+      categories.value = ['Todos', ...uniqueCategories];
+
       _applyFilters();
     } catch (e) {
       errorMessage.value = 'Error al cargar recursos: $e';

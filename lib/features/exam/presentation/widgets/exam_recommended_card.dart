@@ -49,7 +49,7 @@ class ExamRecommendedCard extends StatelessWidget {
 
           // Meta: preguntas - duración - dificultad
           Text(
-            '${exam.questions} preguntas – ${exam.durationMinutes} minutos – ${exam.difficulty}',
+            '${exam.questions} preguntas - ${exam.durationMinutes} minutos - ${exam.difficulty}',
             style: AppTextStyles.bodySmall.copyWith(
               color: AppColors.textMuted,
             ),

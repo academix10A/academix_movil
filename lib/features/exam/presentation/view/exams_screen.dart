@@ -157,9 +157,11 @@ class _ExamsScreenState extends State<ExamsScreen> {
             // Contenido scrollable
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg,
-                  vertical: AppSpacing.sm,
+                padding: EdgeInsets.only(
+                  left: AppSpacing.lg,
+                  right: AppSpacing.lg,
+                  top: AppSpacing.sm,
+                  bottom: MediaQuery.of(context).padding.bottom + 100,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

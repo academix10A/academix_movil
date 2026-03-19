@@ -13,6 +13,16 @@ abstract class AppRoutes {
   static const String settings = '/settings';
   static const String premium = '/premium';
   
+  // New screens
+  static const String splash = '/splash';
+  static const String search = '/search';
+  static const String favorites = '/favorites';
+  static const String offline = '/offline';
+  static const String aiChat = '/ai-chat';
+  static const String examHistory = '/exam-history';
+  static const String temaDetail = '/tema-detail';
+  static const String temas = '/temas';
+  
   // Detail screens
   static const String bookDetail = '/book-detail';
   static const String noteDetail = '/note-detail';

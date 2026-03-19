@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:academix/core/routes/app_routes.dart';
 import 'package:academix/features/tema/domain/entities/tema_entity.dart';
+import 'package:academix/features/tema/domain/entities/subtema_entity.dart';
 
 class TemasViewModel extends ChangeNotifier {
   final ValueNotifier<List<TemaEntity>> temas = ValueNotifier([]);
@@ -43,21 +44,8 @@ class TemasViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void selectTema(TemaEntity tema) {
-    selectedTema.value = tema.id;
-    subtemas.value = tema.subtemas.map((s) => SubtemaEntity(
-      id: s,
-      title: s,
-      temaId: tema.id,
-    )).toList();
-    notifyListeners();
-  }
-
-  void onSubtemaTap(BuildContext context, SubtemaEntity subtema) {
-    // Nav to library filtered by tema/subtema
-    // TODO: Pass filter to library
-    debugPrint('Nav to library filter: ${subtema.temaId} - ${subtema.title}');
-    Navigator.pop(context);
+  void selectTema(String temaId, String temaTitle, BuildContext context) {
+    AppNavigator.push(context, AppRoutes.temaDetail, arguments: {'temaId': temaId, 'temaTitle': temaTitle});
   }
 
   @override
