@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:academix/core/routes/app_routes.dart';
 
 class CreateNoteViewModel extends ChangeNotifier {
   final TextEditingController titleController = TextEditingController();

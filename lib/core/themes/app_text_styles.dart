@@ -28,6 +28,12 @@ class AppTextStyles {
     fontWeight: FontWeight.w400,
   );
 
+  static const TextStyle bodyMedium = TextStyle(
+    fontFamily: 'RedHatDisplay',
+    fontSize: 15,
+    fontWeight: FontWeight.w400,
+  );
+
   static const TextStyle bodySmall = TextStyle(
     fontFamily: 'RedHatDisplay',
     fontSize: 14,

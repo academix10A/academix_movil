@@ -4,19 +4,21 @@ import '../../domain/entities/home_entity.dart';
 import '../../data/repositories/home_repository_impl.dart';
 import '../../data/datasources/home_remote_datasource.dart';
 
-class HomeViewModel extends ChangeNotifier {
+class HomeViewModel {
 
   final TextEditingController searchController = TextEditingController();
 
+  final ValueNotifier<String> userName = ValueNotifier('');
+  final ValueNotifier<Map<String, dynamic>> examProgress = ValueNotifier({});
+  final ValueNotifier<List<RecentItemEntity>> recentItems =
+      ValueNotifier([]);
+  final ValueNotifier<List<Map<String, dynamic>>> readResources =
+      ValueNotifier([]);
+
+  final ValueNotifier<bool> isLoading = ValueNotifier(false);
+  final ValueNotifier<String?> errorMessage = ValueNotifier(null);
+
   late final GetHomeDataUseCase _getHomeDataUseCase;
-
-  String userName = '';
-  Map<String, dynamic> examProgress = {};
-  List<RecentItemEntity> recentItems = [];
-  List<Map<String, dynamic>> readResources = [];
-
-  bool isLoading = false;
-  String errorMessage = '';
 
   HomeViewModel() {
     final remote = HomeRemoteDataSource();
@@ -27,22 +29,20 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   Future<void> loadHomeData() async {
-    try {
-      isLoading = true;
-      notifyListeners();
+    isLoading.value = true;
 
+    try {
       final data = await _getHomeDataUseCase();
 
-      userName = data.userName;
-      examProgress = data.examProgress;
-      recentItems = data.recentItems;
-      readResources = data.readResources;
+      userName.value = data.userName;
+      examProgress.value = data.examProgress;
+      recentItems.value = data.recentItems;
+      readResources.value = data.readResources;
 
     } catch (e) {
-      errorMessage = 'Error al cargar datos';
+      errorMessage.value = 'Error al cargar datos';
     } finally {
-      isLoading = false;
-      notifyListeners();
+      isLoading.value = false;
     }
   }
 
@@ -54,9 +54,13 @@ class HomeViewModel extends ChangeNotifier {
     print("Item seleccionado: ${item.title}");
   }
 
-  @override
   void dispose() {
     searchController.dispose();
-    super.dispose();
+    userName.dispose();
+    examProgress.dispose();
+    recentItems.dispose();
+    readResources.dispose();
+    isLoading.dispose();
+    errorMessage.dispose();
   }
 }

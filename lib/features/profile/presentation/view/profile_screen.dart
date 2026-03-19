@@ -181,6 +181,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                         const SizedBox(height: AppSpacing.md),
 
+                        _MenuOption(
+                          icon: Icons.favorite_border_rounded,
+                          label: "Favoritos",
+                          onTap: () => Navigator.pushNamed(context, AppRoutes.favorites),
+                        ),
+
+                        const SizedBox(height: AppSpacing.md),
+
                         // Cerrar sesión — con color de error
                         _MenuOption(
                           icon: Icons.logout_rounded,

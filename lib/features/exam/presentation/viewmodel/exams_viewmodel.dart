@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:academix/core/routes/app_routes.dart';
-import 'package:academix/features/exam/presentation/view/exam_take_screen.dart';
-import 'package:academix/features/exam/presentation/view/exam_result_screen.dart';
 import 'package:academix/features/exam/domain/entities/exam_entity.dart';
 import 'package:academix/features/exam/data/datasources/exam_remote_datasource.dart';
 
@@ -42,7 +40,7 @@ class ExamItem {
       id: entity.idExamen.toString(),
       title: entity.titulo,
       category: entity.nombreCreador ?? 'Examen',
-      questions: entity.totalPreguntas,
+      questions: entity.cantidadPreguntas,
       durationMinutes: entity.duracionMinutos,
       difficulty: entity.difficulty,
     );
@@ -71,7 +69,7 @@ class CompletedExamItem {
     return CompletedExamItem(
       id: entity.idIntento.toString(),
       title: entity.examTitle,
-      questions: entity.totalPreguntas,
+      questions: entity.cantidadPreguntas,
       timeAgo: entity.dateCompleted,
       score: entity.calificacion.round(),
       grade: entity.aprobo ? 'APROBADO' : 'REPROBADO',

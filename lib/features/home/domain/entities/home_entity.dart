@@ -1,8 +1,6 @@
-// lib/features/home/domain/entities/home_entity.dart
-
 class CourseProgressEntity {
   final String courseName;
-  final int progress; // 0-100
+  final int progress;
 
   CourseProgressEntity({
     required this.courseName,

@@ -127,8 +127,4 @@ class ProfileViewModel extends ChangeNotifier {
       ),
     );
   }
-
-  void dispose() {
-    // Nothing to clean up for now
-  }
 }

@@ -70,15 +70,18 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
                   const SizedBox(height: AppSpacing.lg),
 
-                  // Barra de búsqueda
+                  // Barra de búsqueda - Navega a SearchScreen
                   TextField(
                     controller: vm.searchController,
-                    onSubmitted: vm.onSearch,
+                    onSubmitted: (value) {
+                      vm.onSearch(value);
+                      Navigator.pushNamed(context, '/search');
+                    },
                     style: AppTextStyles.body.copyWith(
                       color: AppColors.textMuted,
                     ),
                     decoration: InputDecoration(
-                      hintText: "Buscar por tema, materia",
+                      hintText: "Buscar por tema, subtemas",
                       hintStyle: AppTextStyles.bodySmall.copyWith(
                         color: AppColors.textMuted,
                       ),
@@ -99,102 +102,83 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     ),
                   ),
 
+
                   const SizedBox(height: AppSpacing.md),
 
                   // Filtros de categorías
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
-                    child: ValueListenableBuilder<String>(
-                      valueListenable: vm.selectedCategory,
-                      builder: (context, selected, _) {
-                        return Row(
-                          children: vm.categories.map((category) {
-                            final isSelected = selected == category;
-                            return Padding(
-                              padding: const EdgeInsets.only(right: AppSpacing.sm),
-                              child: GestureDetector(
-                                onTap: () => vm.selectCategory(category),
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: AppSpacing.md,
-                                    vertical: AppSpacing.sm,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? AppColors.primary
-                                        : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(AppRadius.full),
-                                    border: Border.all(
-                                      color: isSelected
-                                          ? AppColors.primary
-                                          : AppColors.border,
-                                      width: 1.5,
+                    child: ValueListenableBuilder<List<String>>(
+                      valueListenable: vm.categories,
+                      builder: (context, categories, _) {
+                        return ValueListenableBuilder<String>(
+                          valueListenable: vm.selectedCategory,
+                          builder: (context, selected, _) {
+                            return Row(
+                              children: categories.map((category) {
+                                final isSelected = selected == category;
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: AppSpacing.sm),
+                                  child: GestureDetector(
+                                    onTap: () => vm.selectCategory(category),
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: AppSpacing.md,
+                                        vertical: AppSpacing.sm,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: isSelected
+                                            ? AppColors.primary
+                                            : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(AppRadius.full),
+                                        border: Border.all(
+                                          color: isSelected
+                                              ? AppColors.primary
+                                              : AppColors.border,
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        category,
+                                        style: AppTextStyles.bodySmall.copyWith(
+                                          color: isSelected
+                                              ? AppColors.background
+                                              : AppColors.text,
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                  child: Text(
-                                    category,
-                                    style: AppTextStyles.bodySmall.copyWith(
-                                      color: isSelected
-                                          ? AppColors.background
-                                          : AppColors.text,
-                                      fontWeight: isSelected
-                                          ? FontWeight.w600
-                                          : FontWeight.w400,
-                                    ),
-                                  ),
-                                ),
-                              ),
+                                );
+                              }).toList(),
                             );
-                          }).toList(),
+                          },
                         );
                       },
-                    ),
+                    )
                   ),
 
                   const SizedBox(height: AppSpacing.lg),
-
-                  // Título sección destacado
-                  Text(
-                    "Destacado",
-                    style: AppTextStyles.h2.copyWith(
-                      color: AppColors.text,
-                    ),
-                  ),
                 ],
               ),
             ),
 
-            // Lista de recursos (scrollable)
+            // Contenido scrollable - Always show resources
             Expanded(
               child: ValueListenableBuilder<List<LibraryResource>>(
                 valueListenable: vm.filteredResources,
                 builder: (context, resources, _) {
                   if (resources.isEmpty) {
-                    return Center(
-                      child: Text(
-                        "No se encontraron recursos",
-                        style: AppTextStyles.body.copyWith(
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                    );
+                    return const Center(child: Text("No hay recursos"));
                   }
-
                   return ListView.separated(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.lg,
-                      vertical: AppSpacing.sm,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                     itemCount: resources.length,
-                    separatorBuilder: (_, _) =>
-                        const SizedBox(height: AppSpacing.md),
-                    itemBuilder: (context, index) {
-                      return LibraryResourceCard(
-                        resource: resources[index],
-                        onTap: () => vm.onResourceTap(context, resources[index]),
-                      );
-                    },
+                    separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
+                    itemBuilder: (context, index) => LibraryResourceCard(
+                      resource: resources[index],
+                      onTap: () => vm.onResourceTap(context, resources[index]),
+                    ),
                   );
                 },
               ),

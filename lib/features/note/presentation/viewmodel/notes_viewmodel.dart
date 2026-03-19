@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:academix/core/routes/app_routes.dart';
-import 'package:academix/features/note/presentation/view/note_detail_screen.dart';
 import 'package:academix/features/note/domain/entities/note_entity.dart';
 import 'package:academix/features/note/data/datasources/note_remote_datasource.dart';
 

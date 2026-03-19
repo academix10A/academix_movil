@@ -1,11 +1,12 @@
-import 'package:academix/features/home/presentation/widgets/course_progress_card.dart';
-import 'package:academix/features/home/presentation/widgets/recent_item_card.dart';
+import 'package:academix/core/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:academix/core/constants/app_spacing.dart';
 import 'package:academix/core/constants/app_radius.dart';
 import 'package:academix/core/themes/app_text_styles.dart';
 import 'package:academix/core/themes/app_colors.dart';
 import 'package:academix/features/home/presentation/viewmodel/home_viewmodel.dart';
+import 'package:academix/features/home/domain/entities/home_entity.dart';
+import 'package:academix/features/home/presentation/widgets/recent_item_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -37,7 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header con logo
+                /// HEADER
                 Text(
                   "ACADEMIX",
                   style: AppTextStyles.display.copyWith(
@@ -49,13 +50,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 const SizedBox(height: AppSpacing.lg),
 
-                // Saludo
-                Text(
-                  "Hola, ${vm.userName}",
-                  style: AppTextStyles.h1.copyWith(
-                    color: AppColors.text,
-                    fontSize: 28,
-                  ),
+                /// SALUDO
+                ValueListenableBuilder<String>(
+                  valueListenable: vm.userName,
+                  builder: (context, name, _) {
+                    return Text(
+                      "Hola, $name",
+                      style: AppTextStyles.h1.copyWith(
+                        color: AppColors.text,
+                        fontSize: 28,
+                      ),
+                    );
+                  },
                 ),
 
                 const SizedBox(height: AppSpacing.xs),
@@ -69,151 +75,208 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 const SizedBox(height: AppSpacing.lg),
 
-                // Barra de búsqueda
-                TextField(
-                  controller: vm.searchController,
-                  onSubmitted: vm.onSearch,
-                  style: AppTextStyles.body.copyWith(
-                    color: AppColors.background,
+                /// CARD OFFLINE MEJORADA
+                Container(
+                  width: double.infinity,
+                  height: 120,
+                  margin: const EdgeInsets.only(bottom: AppSpacing.xl),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [AppColors.primary.withOpacity(0.1), AppColors.secondary.withOpacity(0.05)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withOpacity(0.1),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
                   ),
-                  decoration: InputDecoration(
-                    hintText: "Buscar recursos, temas, notas...",
-                    hintStyle: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textMuted,
-                    ),
-                    filled: true,
-                    fillColor: AppColors.text,
-                    prefixIcon: Icon(
-                      Icons.search,
-                      color: AppColors.textMuted,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.full),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.lg,
-                      vertical: AppSpacing.md,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      onTap: () => AppNavigator.push(context, AppRoutes.offline),
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.offline_share_outlined,
+                                color: AppColors.background,
+                                size: 28,
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.lg),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    "Contenido Offline",
+                                    style: AppTextStyles.h2.copyWith(
+                                      color: AppColors.text,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: AppSpacing.xs),
+                                  Text(
+                                    "Accede a tus recursos sin conexión",
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                      color: AppColors.textMuted,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(
+                              Icons.arrow_forward_ios,
+                              color: AppColors.textMuted,
+                              size: 18,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
 
-                const SizedBox(height: AppSpacing.xl),
 
-                // Sección de progreso de exámenes
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Tu progreso en exámenes",
-                      style: AppTextStyles.h2.copyWith(
-                        color: AppColors.text,
-                      ),
-                    ),
-                  ],
+
+                /// PROGRESO EXÁMENES
+                Text(
+                  "Tu progreso en exámenes",
+                  style: AppTextStyles.h2.copyWith(
+                    color: AppColors.text,
+                  ),
                 ),
 
                 const SizedBox(height: AppSpacing.md),
 
-                // Estadísticas de exámenes
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
                     color: AppColors.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
-                  child: Column(
-                    children: [
-                      Row(
+                  child: ValueListenableBuilder<Map<String, dynamic>>(
+                    valueListenable: vm.examProgress,
+                    builder: (context, progress, _) {
+                      return Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
                           _buildStatItem(
                             "Exámenes realizados",
-                            "${vm.examProgress['total_examenes_realizados'] ?? 0}",
+                            "${progress['total_examenes_realizados'] ?? 0}",
                           ),
                           _buildStatItem(
                             "Completados",
-                            "${vm.examProgress['examenes_completados'] ?? 0}",
+                            "${progress['examenes_completados'] ?? 0}",
                           ),
                           _buildStatItem(
                             "Promedio",
-                            "${vm.examProgress['promedio_calificacion'] ?? 0}",
+                            "${progress['promedio_calificacion'] ?? 0}",
                           ),
                         ],
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 ),
 
                 const SizedBox(height: AppSpacing.lg),
 
-                // Sección de recursos leídos
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Recursos leídos",
-                      style: AppTextStyles.h2.copyWith(
-                        color: AppColors.text,
-                      ),
-                    ),
-                  ],
+                /// RECURSOS LEÍDOS
+                Text(
+                  "Recursos leídos",
+                  style: AppTextStyles.h2.copyWith(
+                    color: AppColors.text,
+                  ),
                 ),
 
                 const SizedBox(height: AppSpacing.md),
 
-                // Lista de recursos leídos
-                ...vm.readResources.map(
-                  (resource) => Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                    child: Container(
-                      padding: const EdgeInsets.all(AppSpacing.md),
-                      decoration: BoxDecoration(
-                        color: AppColors.text,
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                ValueListenableBuilder<List<Map<String, dynamic>>>(
+                  valueListenable: vm.readResources,
+                  builder: (context, resources, _) {
+                    if (resources.isEmpty) {
+                      return const Text("No hay recursos aún");
+                    }
+
+                    return Column(
+                      children: resources.map((resource) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                          child: Container(
+                            padding: const EdgeInsets.all(AppSpacing.md),
+                            decoration: BoxDecoration(
+                              color: AppColors.text,
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.md),
+                            ),
+                            child: Row(
                               children: [
-                                Text(
-                                  resource['titulo'] ?? '',
-                                  style: AppTextStyles.body.copyWith(
-                                    color: AppColors.background,
-                                    fontWeight: FontWeight.w600,
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        resource['titulo'] ?? '',
+                                        style: AppTextStyles.body.copyWith(
+                                          color: AppColors.background,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: AppSpacing.xs),
+                                      LinearProgressIndicator(
+                                        value:
+                                            (resource['porcentaje_leido'] ?? 0) /
+                                                100,
+                                        backgroundColor: AppColors.textMuted,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                          resource['completado'] == true
+                                              ? AppColors.success
+                                              : AppColors.secondary,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                const SizedBox(height: AppSpacing.xs),
-                                LinearProgressIndicator(
-                                  value: (resource['porcentaje_leido'] ?? 0) / 100,
-                                  backgroundColor: AppColors.textMuted,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    resource['completado'] == true 
-                                        ? AppColors.success 
-                                        : AppColors.secondary,
+                                const SizedBox(width: AppSpacing.md),
+                                Text(
+                                  "${resource['porcentaje_leido'] ?? 0}%",
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: AppColors.background,
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(width: AppSpacing.md),
-                          Text(
-                            "${resource['porcentaje_leido'] ?? 0}%",
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: AppColors.background,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                        );
+                      }).toList(),
+                    );
+                  },
                 ),
 
                 const SizedBox(height: AppSpacing.lg),
 
-                // Sección de recientes
+                /// RECIENTES
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -224,10 +287,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     TextButton(
-                      onPressed: () {
-                        // TODO: Cambiar para después conectar a API de Arath
-                        // Navegar a ver todos los recientes
-                      },
+                      onPressed: () {},
                       child: Text(
                         "Ver todo",
                         style: AppTextStyles.bodySmall.copyWith(
@@ -241,15 +301,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 const SizedBox(height: AppSpacing.md),
 
-                // Lista de items recientes
-                ...vm.recentItems.map(
-                  (item) => Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                    child: RecentItemCard(
-                      item: item,
-                      onTap: () => vm.onRecentItemTap(item),
-                    ),
-                  ),
+                ValueListenableBuilder<List<RecentItemEntity>>(
+                  valueListenable: vm.recentItems,
+                  builder: (context, items, _) {
+                    if (items.isEmpty) {
+                      return const Text("No hay recientes");
+                    }
+
+                    return Column(
+                      children: items.map((item) {
+                        return Padding(
+                          padding:
+                              const EdgeInsets.only(bottom: AppSpacing.md),
+                          child: RecentItemCard(
+                            item: item,
+                            onTap: () => vm.onRecentItemTap(item),
+                          ),
+                        );
+                      }).toList(),
+                    );
+                  },
                 ),
 
                 const SizedBox(height: AppSpacing.xxl),

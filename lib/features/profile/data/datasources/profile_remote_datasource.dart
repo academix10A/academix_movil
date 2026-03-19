@@ -1,5 +1,6 @@
 import '../../../../core/network/dio_client.dart';
 import '../../domain/entities/profile_entity.dart';
+import '../../domain/entities/membresia_entity.dart';
 
 class ProfileRemoteDataSource {
   Future<UserProfileEntity> getCurrentUser() async {
@@ -41,6 +42,14 @@ class ProfileRemoteDataSource {
         'contrasena_nueva': newPassword,
       },
     );
+  }
+
+  Future<List<Membresia>> getMembresias() async {
+    final response = await DioClient.dio.get('/membresias/');
+
+    return (response.data as List)
+        .map((json) => Membresia.fromJson(json))
+        .toList();
   }
 
   /// Get user exam progress statistics

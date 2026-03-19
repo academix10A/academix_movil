@@ -3,7 +3,7 @@ class ExamEntity {
   final String titulo;
   final String? descripcion;
   final int duracionMinutos;
-  final int totalPreguntas;
+  final int cantidadPreguntas;
   final double calificacionMinima;
   final DateTime fechaCreacion;
   final DateTime? fechaLimite;
@@ -16,7 +16,7 @@ class ExamEntity {
     required this.titulo,
     this.descripcion,
     required this.duracionMinutos,
-    required this.totalPreguntas,
+    required this.cantidadPreguntas,
     required this.calificacionMinima,
     required this.fechaCreacion,
     this.fechaLimite,
@@ -31,7 +31,7 @@ class ExamEntity {
       titulo: json['titulo'] ?? '',
       descripcion: json['descripcion'],
       duracionMinutos: json['duracion_minutos'] ?? 30,
-      totalPreguntas: json['total_preguntas'] ?? 0,
+      cantidadPreguntas: json['cantidad_preguntas'] ?? 0,
       calificacionMinima: (json['calificacion_minima'] ?? 70).toDouble(),
       fechaCreacion: json['fecha_creacion'] != null
           ? DateTime.parse(json['fecha_creacion'])
@@ -47,8 +47,8 @@ class ExamEntity {
 
   // Mapper para compatibilidad con la UI existente
   String get difficulty {
-    if (totalPreguntas <= 5) return 'Fácil';
-    if (totalPreguntas <= 10) return 'Medio';
+    if (cantidadPreguntas <= 5) return 'Fácil';
+    if (cantidadPreguntas <= 10) return 'Medio';
     return 'Difícil';
   }
 
@@ -73,7 +73,7 @@ class CompletedExamEntity {
   final DateTime fechaInicio;
   final DateTime fechaFin;
   final int respuestasCorrectas;
-  final int totalPreguntas;
+  final int cantidadPreguntas;
   final bool aprobo;
   final String? tituloExamen;
 
@@ -85,7 +85,7 @@ class CompletedExamEntity {
     required this.fechaInicio,
     required this.fechaFin,
     required this.respuestasCorrectas,
-    required this.totalPreguntas,
+    required this.cantidadPreguntas,
     required this.aprobo,
     this.tituloExamen,
   });
@@ -103,7 +103,7 @@ class CompletedExamEntity {
           ? DateTime.parse(json['fecha_fin'])
           : DateTime.now(),
       respuestasCorrectas: json['respuestas_correctas'] ?? 0,
-      totalPreguntas: json['total_preguntas'] ?? 0,
+      cantidadPreguntas: json['cantidad_preguntas'] ?? 0,
       aprobo: json['aprobo'] ?? false,
       tituloExamen: json['titulo_examen'],
     );
@@ -130,6 +130,6 @@ class CompletedExamEntity {
   String get examTitle => tituloExamen ?? 'Examen #${idExamen}';
 
   int get correctAnswers => respuestasCorrectas;
-  int get incorrectAnswers => totalPreguntas - respuestasCorrectas;
+  int get incorrectAnswers => cantidadPreguntas - respuestasCorrectas;
 }
 
