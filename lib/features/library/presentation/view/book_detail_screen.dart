@@ -4,7 +4,7 @@ import 'package:academix/core/themes/app_text_styles.dart';
 import 'package:academix/core/themes/app_colors.dart';
 import 'package:academix/core/constants/app_radius.dart';
 import 'package:academix/core/routes/app_routes.dart';
-import 'package:academix/features/ai/presentation/view/ai_chat_screen.dart';
+import 'package:academix/features/library/presentation/view/ai_chat_screen.dart';
 import 'package:academix/features/library/presentation/viewmodel/book_detail_viewmodel.dart';
 import 'package:academix/features/library/presentation/viewmodel/library_viewmodel.dart';
 import 'package:academix/features/library/domain/entities/library_entity.dart';

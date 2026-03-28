@@ -5,6 +5,8 @@ import 'package:academix/core/themes/app_colors.dart';
 import 'package:academix/core/constants/app_radius.dart';
 import 'package:academix/core/routes/app_routes.dart';
 import 'package:academix/features/exam/presentation/viewmodel/exams_viewmodel.dart';
+import 'package:academix/features/exam/data/datasources/exam_remote_datasource.dart';
+import 'package:academix/features/exam/domain/entities/exam_entity.dart';
 
 class ExamTakeScreen extends StatefulWidget {
   final ExamItem exam;
@@ -16,68 +18,48 @@ class ExamTakeScreen extends StatefulWidget {
 }
 
 class _ExamTakeScreenState extends State<ExamTakeScreen> {
+  ExamEntity? _examData;
+  bool _loading = true;
+  String? _error;
   int _currentQuestion = 0;
-  int? _selectedAnswer;
-  final Map<int, int> _answers = {};
+  int? _selectedOptionId;
+  final Map<int, int> _answers = {}; // id_pregunta -> id_opcion
   late int _remainingSeconds;
   late TextEditingController _timerController;
-
-  // Preguntas de ejemplo
-  final List<Map<String, dynamic>> _questions = [
-    {
-      "question": "¿Cuál es el resultado de la derivada de x²?",
-      "options": ["2x", "x", "2", "x²"],
-      "correct": 0,
-    },
-    {
-      "question": "¿Qué representa el símbolo '∫' en cálculo?",
-      "options": [
-        "Una derivada",
-        "Una integral",
-        "Un límite",
-        "Una función"
-      ],
-      "correct": 1,
-    },
-    {
-      "question": "¿Cuál es la derivada de sen(x)?",
-      "options": ["cos(x)", "-cos(x)", "-sen(x)", "tan(x)"],
-      "correct": 0,
-    },
-    {
-      "question": "¿Qué es una matriz identidad?",
-      "options": [
-        "Matriz con puros ceros",
-        "Matriz diagonal con unos",
-        "Matriz cuadrada",
-        "Matriz transpuesta"
-      ],
-      "correct": 1,
-    },
-    {
-      "question": "¿Cuál es el teorema fundamental del cálculo?",
-      "options": [
-        "Teorema de Pitágoras",
-        "Teorema del valor medio",
-        "Relación entre derivada e integral",
-        "Teorema de Gauss"
-      ],
-      "correct": 2,
-    },
-  ];
+  final ExamRemoteDataSource _dataSource = ExamRemoteDataSource();
 
   @override
   void initState() {
     super.initState();
+    _loadExamData();
     _remainingSeconds = widget.exam.durationMinutes * 60;
     _timerController = TextEditingController();
     _startTimer();
   }
 
+  Future<void> _loadExamData() async {
+    try {
+      final data = await _dataSource.getExamCompleto(int.parse(widget.exam.id));
+      if (mounted) {
+        setState(() {
+          _examData = data;
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _loading = false;
+        });
+      }
+    }
+  }
+
   void _startTimer() {
     Future.doWhile(() async {
       await Future.delayed(const Duration(seconds: 1));
-      if (!mounted) return false;
+      if (!mounted || _loading) return false;
       setState(() {
         _remainingSeconds--;
       });
@@ -101,39 +83,82 @@ class _ExamTakeScreenState extends State<ExamTakeScreen> {
     super.dispose();
   }
 
-  void _submitExam() {
-    // Calcular puntuación
-    int correctAnswers = 0;
-    _answers.forEach((questionIndex, answerIndex) {
-      if (_questions[questionIndex]["correct"] == answerIndex) {
-        correctAnswers++;
+  Future<void> _submitExam() async {
+    if (_examData == null || _answers.length < _examData!.preguntas!.length) {
+      // Not all answered, submit anyway
+    }
+
+    try {
+      final result = await _dataSource.submitExam(
+        idExamen: _examData!.idExamen,
+        respuestas: _answers,
+      );
+
+      final score = result.porcentaje?.round() ?? result.calificacion.round();
+      final grade = score >= 90
+          ? "EXCELENTE"
+          : score >= 70
+              ? "APROBADO"
+              : "REPROBADO";
+
+      // Navigate to results
+      AppNavigator.pushReplacement(
+        context,
+        AppRoutes.examResult,
+        arguments: {
+          "exam": widget.exam,
+          "score": score,
+          "grade": grade,
+          "correctAnswers": result.respuestasCorrectas,
+          "totalQuestions": result.cantidadPreguntas,
+        },
+      );
+    } catch (e) {
+      // Handle error, show dialog
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al enviar')),
+        );
       }
-    });
-
-    final score = ((correctAnswers / _questions.length) * 100).round();
-    final grade = score >= 90
-        ? "EXCELENTE"
-        : score >= 70
-            ? "APROBADO"
-            : "REPROBADO";
-
-    // Navegar a resultados
-    AppNavigator.pushReplacement(
-      context,
-      AppRoutes.examResult,
-      arguments: {
-        "exam": widget.exam,
-        "score": score,
-        "grade": grade,
-        "correctAnswers": correctAnswers,
-        "totalQuestions": _questions.length,
-      },
-    );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final question = _questions[_currentQuestion];
+    if (_loading) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_error != null || _examData == null || _examData!.preguntas == null) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+Icon(Icons.quiz, size: 64, color: AppColors.textMuted),
+              const SizedBox(height: AppSpacing.lg),
+              Text('Error cargando examen', style: AppTextStyles.h2),
+              Text('Datos no disponibles'),
+              const SizedBox(height: AppSpacing.lg),
+              ElevatedButton(
+                onPressed: () => AppNavigator.pop(context),
+                child: const Text('Volver'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final preguntas = _examData!.preguntas!;
+    final question = preguntas[_currentQuestion];
+
+    final answeredCount = _answers.length;
+    final isAnswered = _answers.containsKey(question.idPregunta);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -210,14 +235,14 @@ class _ExamTakeScreenState extends State<ExamTakeScreen> {
                   Row(
                     children: [
                       Text(
-                        "Pregunta ${_currentQuestion + 1} de ${_questions.length}",
+                        "Pregunta ${_currentQuestion + 1} de ${preguntas.length}",
                         style: AppTextStyles.bodySmall.copyWith(
                           color: AppColors.textMuted,
                         ),
                       ),
                       const Spacer(),
                       Text(
-                        "${_answers.length}/${_questions.length} respondidas",
+                        "$answeredCount/${preguntas.length} respondidas",
                         style: AppTextStyles.bodySmall.copyWith(
                           color: AppColors.primary,
                         ),
@@ -229,10 +254,9 @@ class _ExamTakeScreenState extends State<ExamTakeScreen> {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(AppRadius.full),
                     child: LinearProgressIndicator(
-                      value: (_currentQuestion + 1) / _questions.length,
+                      value: (_currentQuestion + 1) / preguntas.length,
                       backgroundColor: AppColors.backgroundCard,
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(AppColors.primary),
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                       minHeight: 6,
                     ),
                   ),
@@ -243,9 +267,7 @@ class _ExamTakeScreenState extends State<ExamTakeScreen> {
             // Contenido de la pregunta
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -271,7 +293,7 @@ class _ExamTakeScreenState extends State<ExamTakeScreen> {
 
                     // Pregunta
                     Text(
-                      question["question"],
+                      question.contenido,
                       style: AppTextStyles.h2.copyWith(
                         color: AppColors.text,
                         fontSize: 20,
@@ -282,95 +304,76 @@ class _ExamTakeScreenState extends State<ExamTakeScreen> {
                     const SizedBox(height: AppSpacing.xl),
 
                     // Opciones de respuesta
-                    ...List.generate(
-                      (question["options"] as List).length,
-                      (index) {
-                        final isSelected = _selectedAnswer == index;
-                        final isAnswered = _answers.containsKey(_currentQuestion);
-                        final isCorrect = index == question["correct"];
+                    ...List.generate(question.opciones.length, (index) {
+                      final option = question.opciones[index];
+                      final isSelected = _selectedOptionId == option.idOpcion;
+                      bool isAnswered = _answers.containsKey(question.idPregunta);
+                      int? selectedAnswerId = _answers[question.idPregunta];
 
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _selectedAnswer = index;
-                                _answers[_currentQuestion] = index;
-                              });
-                            },
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              padding: const EdgeInsets.all(AppSpacing.lg),
-                              decoration: BoxDecoration(
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                        child: GestureDetector(
+                          onTap: isAnswered ? null : () {
+                            setState(() {
+                              _selectedOptionId = option.idOpcion;
+                              _answers[question.idPregunta] = option.idOpcion;
+                            });
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.all(AppSpacing.lg),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppColors.primary.withOpacity(0.15)
+                                  : AppColors.backgroundCard,
+                              borderRadius: BorderRadius.circular(AppRadius.md),
+                              border: Border.all(
                                 color: isSelected
-                                    ? AppColors.primary.withOpacity(0.15)
-                                    : AppColors.backgroundCard,
-                                borderRadius:
-                                    BorderRadius.circular(AppRadius.md),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? AppColors.primary
-                                      : AppColors.border,
-                                  width: isSelected ? 2 : 1,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  // Letra de opción
-                                  Container(
-                                    width: 36,
-                                    height: 36,
-                                    decoration: BoxDecoration(
-                                      color: isSelected
-                                          ? AppColors.primary
-                                          : AppColors.background,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        String.fromCharCode(65 + index),
-                                        style:
-                                            AppTextStyles.body.copyWith(
-                                          color: isSelected
-                                              ? AppColors.background
-                                              : AppColors.textMuted,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: AppSpacing.md),
-                                  // Texto de opción
-                                  Expanded(
-                                    child: Text(
-                                      question["options"][index],
-                                      style: AppTextStyles.body.copyWith(
-                                        color: AppColors.text,
-                                      ),
-                                    ),
-                                  ),
-                                  // Icono de contestada
-                                  if (isAnswered && isCorrect)
-                                    Icon(
-                                      Icons.check_circle_rounded,
-                                      color: AppColors.success,
-                                      size: 22,
-                                    )
-                                  else if (isAnswered &&
-                                      !isCorrect &&
-                                      isSelected)
-                                    Icon(
-                                      Icons.cancel_rounded,
-                                      color: AppColors.error,
-                                      size: 22,
-                                    ),
-                                ],
+                                    ? AppColors.primary
+                                    : AppColors.border,
+                                width: isSelected ? 2 : 1,
                               ),
                             ),
+                            child: Row(
+                              children: [
+                                // Letra de opción
+                                Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? AppColors.primary
+                                        : AppColors.background,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      String.fromCharCode(65 + index),
+                                      style: AppTextStyles.body.copyWith(
+                                        color: isSelected
+                                            ? AppColors.background
+                                            : AppColors.textMuted,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: AppSpacing.md),
+                                // Texto de opción
+                                Expanded(
+                                  child: Text(
+                                    option.respuesta,
+                                    style: AppTextStyles.body.copyWith(
+                                      color: AppColors.text,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        );
-                      },
-                    ),
+                        ),
+                      );
+                    }),
 
                     const SizedBox(height: AppSpacing.xl),
                   ],
@@ -390,13 +393,12 @@ class _ExamTakeScreenState extends State<ExamTakeScreen> {
                         onTap: () {
                           setState(() {
                             _currentQuestion--;
-                            _selectedAnswer = _answers[_currentQuestion];
+                            final prevQuestion = _examData!.preguntas![_currentQuestion];
+                            _selectedOptionId = _answers[prevQuestion.idPregunta];
                           });
                         },
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: AppSpacing.md,
-                          ),
+                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                           decoration: BoxDecoration(
                             color: AppColors.backgroundCard,
                             borderRadius: BorderRadius.circular(AppRadius.md),
@@ -428,19 +430,20 @@ class _ExamTakeScreenState extends State<ExamTakeScreen> {
                     flex: 2,
                     child: GestureDetector(
                       onTap: () {
-                        if (_currentQuestion < _questions.length - 1) {
+                        if (_currentQuestion < preguntas.length - 1) {
                           setState(() {
                             _currentQuestion++;
-                            _selectedAnswer = _answers[_currentQuestion];
+                            final nextQuestion = preguntas[_currentQuestion];
+                            _selectedOptionId = _answers[nextQuestion.idPregunta];
+
+
                           });
                         } else {
                           _submitExam();
                         }
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: AppSpacing.md,
-                        ),
+                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                         decoration: BoxDecoration(
                           color: AppColors.primary,
                           borderRadius: BorderRadius.circular(AppRadius.md),
@@ -449,7 +452,7 @@ class _ExamTakeScreenState extends State<ExamTakeScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              _currentQuestion < _questions.length - 1
+                              _currentQuestion < preguntas.length - 1
                                   ? "Siguiente"
                                   : "Enviar examen",
                               style: AppTextStyles.body.copyWith(
@@ -459,7 +462,7 @@ class _ExamTakeScreenState extends State<ExamTakeScreen> {
                             ),
                             const SizedBox(width: AppSpacing.sm),
                             Icon(
-                              _currentQuestion < _questions.length - 1
+                              _currentQuestion < preguntas.length - 1
                                   ? Icons.arrow_forward_rounded
                                   : Icons.send_rounded,
                               color: AppColors.background,

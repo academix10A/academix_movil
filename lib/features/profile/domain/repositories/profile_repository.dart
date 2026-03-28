@@ -9,5 +9,6 @@ abstract class ProfileRepository {
   Future<void> changePassword(String currentPassword, String newPassword);
   Future<UserStatsEntity> getUserStats();
   Future<int> getResourcesCount();
+  Future<int> getNoteCount();
 }
 

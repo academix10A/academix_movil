@@ -155,9 +155,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       final success = await vm.login();
 
                       if (success && context.mounted) {
-                        AppNavigator.pushReplacement(
+                        Navigator.pushNamedAndRemoveUntil(
                           context,
                           AppRoutes.main,
+                          (route) => false,
                         );
                       } else {
                         setState(() {}); // refresca errorMessage

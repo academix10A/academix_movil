@@ -16,7 +16,17 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final HomeViewModel vm = HomeViewModel();
+  late final HomeViewModel vm;
+
+  @override
+  void initState() {
+    super.initState();
+    vm = HomeViewModel();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      vm.loadHomeData();
+    });
+  }
 
   @override
   void dispose() {

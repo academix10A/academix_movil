@@ -58,6 +58,16 @@ class ProfileRemoteDataSource {
     return UserStatsEntity.fromJson(response.data);
   }
 
+  Future<int> getNoteCount() async {
+    final response = await DioClient.dio.get('/notas/count');
+
+    if (response.statusCode == 200) {
+      return response.data['count'];
+    }
+
+    return 0;
+  }
+
   /// Get user resources read count
   Future<int> getResourcesCount() async {
     final response = await DioClient.dio.get('/home/usuario/recursos-leidos');

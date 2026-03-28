@@ -1,25 +1,32 @@
+import '../../../library/domain/entities/library_entity.dart';
+
 class NoteEntity {
   final int idNota;
+  final String titulo;
   final String contenido;
   final DateTime fechaCreacion;
   final DateTime fechaActualizacion;
   final bool esCompartida;
   final int idUsuario;
   final int? idRecurso;
+  final LibraryResourceEntity? recurso;
 
   NoteEntity({
     required this.idNota,
+    required this.titulo,
     required this.contenido,
     required this.fechaCreacion,
     required this.fechaActualizacion,
     required this.esCompartida,
     required this.idUsuario,
     this.idRecurso,
+    this.recurso,
   });
 
   factory NoteEntity.fromJson(Map<String, dynamic> json) {
     return NoteEntity(
       idNota: json['id_nota'] ?? 0,
+      titulo: json['titulo'] ?? '',
       contenido: json['contenido'] ?? '',
       fechaCreacion: json['fecha_creacion'] != null
           ? DateTime.parse(json['fecha_creacion'])
@@ -30,13 +37,14 @@ class NoteEntity {
       esCompartida: json['es_compartida'] ?? false,
       idUsuario: json['id_usuario'] ?? 0,
       idRecurso: json['id_recurso'],
+      recurso: json['recurso'] != null ? LibraryResourceEntity.fromJson(json['recurso']) : null,
     );
   }
 
   // Mapper para compatibilidad con la UI existente
   String get title {
-    final lines = contenido.split('\n');
-    return lines.isNotEmpty ? lines.first : 'Nota sin título';
+    final lines = titulo;
+    return lines.isNotEmpty ? lines : 'Nota sin título';
   }
 
   String get preview {
@@ -70,5 +78,7 @@ class NoteEntity {
   }
 
   bool get isShared => esCompartida;
+  
+  bool get hasResource => recurso != null;
 }
 

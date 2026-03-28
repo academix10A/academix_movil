@@ -19,11 +19,9 @@ import 'features/auth/presentation/view/forgot_password_screen.dart';
 import 'features/auth/presentation/view/splash_screen.dart';
 import 'features/library/presentation/view/favorites_screen.dart';
 import 'features/home/presentation/view/offline_content_screen.dart';
-import 'features/search/presentation/view/search_screen.dart';
-import 'features/ai/presentation/view/ai_chat_screen.dart';
+import 'features/library/presentation/view/search_screen.dart';
+import 'features/library/presentation/view/ai_chat_screen.dart';
 import 'features/exam/presentation/view/exam_history_screen.dart';
-import 'features/tema/presentation/view/subtema_screen.dart';
-import 'features/tema/presentation/view/temas_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -93,19 +91,10 @@ class MyApp extends StatelessWidget {
             return MaterialPageRoute(builder: (_) => const RegisterScreen());
           case AppRoutes.forgotPassword:
             return MaterialPageRoute(builder: (_) => const ForgotPasswordScreen());
-          case AppRoutes.temaDetail:
-            final args = settings.arguments as Map<String, dynamic>? ?? {};
-            final temaId = args['temaId'] as String;
-            final temaTitle = args['temaTitle'] as String;
-            return MaterialPageRoute(
-              builder: (_) => SubtemaScreen(temaId: temaId, temaTitle: temaTitle),
-            );
           case AppRoutes.aiChat:
             return MaterialPageRoute(builder: (_) => const AiChatScreen());
           case AppRoutes.examHistory:
             return MaterialPageRoute(builder: (_) => const ExamHistoryScreen());
-          case AppRoutes.temas:
-            return MaterialPageRoute(builder: (_) => const TemasScreen());
           default:
             return MaterialPageRoute(builder: (_) => const LoginScreen());
         }

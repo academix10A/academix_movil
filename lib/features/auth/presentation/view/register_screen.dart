@@ -68,7 +68,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Nombre completo",
+                        "Nombre",
                         style: AppTextStyles.bodySmall.copyWith(
                           fontWeight: FontWeight.w500,
                           color: AppColors.text,
@@ -81,7 +81,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           color: AppColors.text,
                         ),
                         decoration: InputDecoration(
-                          hintText: "Juan Pérez",
+                          hintText: "Juan",
                           hintStyle: AppTextStyles.bodySmall.copyWith(
                             color: AppColors.textMuted,
                           ),
@@ -95,6 +95,86 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             horizontal: 16,
                             vertical: 16,
                           ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Apellido Paterno",
+                              style: AppTextStyles.bodySmall.copyWith(
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.text,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            TextField(
+                              controller: vm.apellidoPaternoController,
+                              style: AppTextStyles.body.copyWith(
+                                color: AppColors.text,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: "Perez",
+                                hintStyle: AppTextStyles.bodySmall.copyWith(
+                                  color: AppColors.textMuted,
+                                ),
+                                filled: true,
+                                fillColor: AppColors.backgroundCard,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 16,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Apellido Materno",
+                              style: AppTextStyles.bodySmall.copyWith(
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.text,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            TextField(
+                              controller: vm.apellidoMaternoController,
+                              style: AppTextStyles.body.copyWith(
+                                color: AppColors.text,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: "Gonzalez",
+                                hintStyle: AppTextStyles.bodySmall.copyWith(
+                                  color: AppColors.textMuted,
+                                ),
+                                filled: true,
+                                fillColor: AppColors.backgroundCard,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 16,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -225,7 +305,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           final success = await vm.register();
                           if (success && context.mounted) {
                             // Mock to main
-                            Navigator.of(context).pushReplacementNamed(AppRoutes.main);
+                            Navigator.pushNamedAndRemoveUntil(
+                              context,
+                              AppRoutes.main,
+                              (route) => false,
+                            );
                           } else {
                             setState(() {});
                           }

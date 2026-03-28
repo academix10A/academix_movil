@@ -24,8 +24,6 @@ class HomeViewModel {
     final remote = HomeRemoteDataSource();
     final repository = HomeRepositoryImpl(remote);
     _getHomeDataUseCase = GetHomeDataUseCase(repository);
-
-    loadHomeData();
   }
 
   Future<void> loadHomeData() async {
@@ -44,10 +42,6 @@ class HomeViewModel {
     } finally {
       isLoading.value = false;
     }
-  }
-
-  void onSearch(String query) {
-    print("Buscando: $query");
   }
 
   void onRecentItemTap(RecentItemEntity item) {

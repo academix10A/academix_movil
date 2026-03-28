@@ -52,10 +52,12 @@ class ProfileViewModel extends ChangeNotifier {
           promedioCalificacion: 0.0,
         )),
         _dataSource.getResourcesCount().catchError((_) => 0),
+        _dataSource.getNoteCount().catchError((_) => 0),
       ]);
       
       _stats = results[0] as UserStatsEntity;
       _resourcesCount = results[1] as int;
+      _notesCount = results[2] as int;
       
       // TODO: Check membership status when endpoint is available
       // For now, set as non-premium (can be updated later)
