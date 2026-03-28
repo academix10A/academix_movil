@@ -24,7 +24,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.note.title);
-    _contentController = TextEditingController(text: widget.note.preview);
+    _contentController = TextEditingController(text: widget.note.content);
   }
 
   @override
@@ -261,15 +261,96 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                           borderRadius: BorderRadius.circular(AppRadius.md),
                         ),
                         child: Text(
-                          widget.note.preview,
+                          widget.note.content,
                           style: AppTextStyles.body.copyWith(
                             color: AppColors.text,
-                            height: 1.8,
+                        height: 1.8,
                           ),
                         ),
                       ),
 
                     const SizedBox(height: AppSpacing.xl),
+
+                    // Recurso asociado
+                    if (widget.note.hasResource)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                        child: GestureDetector(
+                          onTap: () {
+                            AppNavigator.push(
+                              context,
+                              AppRoutes.bookDetail,
+                              arguments: widget.note.resource,
+                            );
+                          },
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(AppSpacing.lg),
+                            decoration: BoxDecoration(
+                              color: AppColors.backgroundCard.withOpacity(0.6),
+                              borderRadius: BorderRadius.circular(AppRadius.md),
+                              border: Border.all(
+                                color: AppColors.primary.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.book_outlined,
+                                      color: AppColors.primary,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: AppSpacing.sm),
+                                    Text(
+                                      'Recurso asociado',
+                                      style: AppTextStyles.bodySmall.copyWith(
+                                        color: AppColors.textMuted,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: AppSpacing.sm),
+                                Text(
+                                  widget.note.resource!.title,
+                                  style: AppTextStyles.h2.copyWith(
+                                    fontSize: 18,
+                                    color: AppColors.text,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: AppSpacing.xs),
+                                Text(
+                                  widget.note.resource!.description,
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: AppColors.textMuted,
+                                    height: 1.4,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: AppSpacing.sm),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      'Ver recurso →',
+                                      style: AppTextStyles.bodySmall.copyWith(
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
 
                     // Opciones adicionales en modo edición
                     if (_isEditing) ...[

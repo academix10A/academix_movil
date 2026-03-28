@@ -168,4 +168,3 @@ class _EditNoteScreenState extends State<EditNoteScreen> {
     );
   }
 }
-

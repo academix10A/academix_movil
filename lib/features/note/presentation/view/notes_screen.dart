@@ -14,7 +14,13 @@ class NotesScreen extends StatefulWidget {
 }
 
 class _NotesScreenState extends State<NotesScreen> {
-  final NotesViewModel vm = NotesViewModel();
+  late final NotesViewModel vm;
+
+  @override
+  void initState() {
+    super.initState();
+    vm = NotesViewModel();
+  }
 
   @override
   void dispose() {

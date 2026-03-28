@@ -41,7 +41,8 @@ class LibraryViewModel {
       ValueNotifier<List<LibraryResource>>([]);
 
   final ValueNotifier<bool> isLoading = ValueNotifier<bool>(false);
-  final ValueNotifier<String?> errorMessage = ValueNotifier<String?>(null);
+final ValueNotifier<String?> errorMessage = ValueNotifier<String?>(null);
+  final ValueNotifier<bool> isSearchFocused = ValueNotifier<bool>(false);
 
   final ValueNotifier<List<String>> categories =
     ValueNotifier<List<String>>(['Todos']);
@@ -50,7 +51,6 @@ class LibraryViewModel {
   List<LibraryResource> _allResources = [];
 
   LibraryViewModel() {
-    searchController.addListener(_applyFilters);
     selectedCategory.addListener(_applyFilters);
     loadResources();
   }
@@ -90,16 +90,10 @@ class LibraryViewModel {
   }
 
   void _applyFilters() {
-    final query = searchController.text.toLowerCase();
     final category = selectedCategory.value;
 
     filteredResources.value = _allResources.where((r) {
-      final matchesCategory = category == 'Todos' || r.category == category;
-      final matchesQuery = query.isEmpty ||
-          r.title.toLowerCase().contains(query) ||
-          r.category.toLowerCase().contains(query) ||
-          r.description.toLowerCase().contains(query);
-      return matchesCategory && matchesQuery;
+      return category == 'Todos' || r.category == category;
     }).toList();
   }
 
@@ -108,7 +102,7 @@ class LibraryViewModel {
   }
 
   void onSearch(String query) {
-    _applyFilters();
+    // No local filter, navigate to search
   }
 
   void onResourceTap(BuildContext context, LibraryResource resource) {

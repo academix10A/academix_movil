@@ -18,6 +18,11 @@ class ExamRepositoryImpl implements ExamRepository {
   }
 
   @override
+  Future<ExamEntity> getExamCompleto(int id) {
+    return remote.getExamCompleto(id);
+  }
+
+  @override
   Future<List<CompletedExamEntity>> getCompletedExams() {
     return remote.getCompletedExams();
   }

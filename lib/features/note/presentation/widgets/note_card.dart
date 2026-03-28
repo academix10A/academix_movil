@@ -89,6 +89,14 @@ class NoteCard extends StatelessWidget {
                     textColor: AppColors.accent,
                     borderColor: AppColors.accent,
                   ),
+                // Resource indicator
+                if (note.hasResource)
+                  _TagChip(
+                    label: '${note.resource!.title.substring(0, 15)}${note.resource!.title.length > 15 ? '...' : ''}',
+                    color: AppColors.accent.withOpacity(0.1),
+                    textColor: AppColors.accent,
+                    borderColor: AppColors.accent,
+                  ),
               ],
             ),
           ],

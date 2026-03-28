@@ -6,7 +6,7 @@ class HomeRemoteDataSource {
   Future<String> getUserName() async {
     final response = await DioClient.dio.get('/usuarios/me');
     
-    return '${response.data['nombre']} ${response.data['apellido_paterno']}';
+    return '${response.data['nombre']}';
   }
 
   Future<Map<String, dynamic>> getExamProgress() async {

@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+import '../../domain/entities/user_entity.dart';
+import '../../domain/usecases/register_user_usecase.dart';
+import '../../data/datasources/auth_remote_datasource.dart';
+import '../../data/repositories/auth_repository_impl.dart';
 
 class RegisterViewModel extends ChangeNotifier {
   final TextEditingController nameController = TextEditingController();
+  final TextEditingController apellidoPaternoController = TextEditingController();
+  final TextEditingController apellidoMaternoController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController = TextEditingController();
@@ -12,6 +19,8 @@ class RegisterViewModel extends ChangeNotifier {
   @override
   void dispose() {
     nameController.dispose();
+    apellidoPaternoController.dispose();
+    apellidoMaternoController.dispose();
     emailController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
@@ -23,21 +32,40 @@ class RegisterViewModel extends ChangeNotifier {
     isLoading = true;
     notifyListeners();
 
-    // Mock validation
-    if (nameController.text.isEmpty) {
+    // Validation
+    if (nameController.text.trim().isEmpty) {
       errorMessage = 'El nombre es requerido';
       isLoading = false;
       notifyListeners();
       return false;
     }
-    if (emailController.text.isEmpty || !emailController.text.contains('@')) {
-      errorMessage = 'Email válido requerido';
+    if (apellidoPaternoController.text.trim().isEmpty) {
+      errorMessage = 'El apellido paterno es requerido';
+      isLoading = false;
+      notifyListeners();
+      return false;
+    }
+    if (apellidoMaternoController.text.trim().isEmpty) {
+      errorMessage = 'El apellido materno es requerido';
+      isLoading = false;
+      notifyListeners();
+      return false;
+    }
+    if (emailController.text.trim().isEmpty || !emailController.text.trim().contains('@')) {
+      errorMessage = 'Correo electrónico válido requerido';
       isLoading = false;
       notifyListeners();
       return false;
     }
     if (passwordController.text.length < 8) {
-      errorMessage = 'Contraseña mínimo 8 caracteres';
+      errorMessage = 'La contraseña debe tener mínimo 8 caracteres';
+      isLoading = false;
+      notifyListeners();
+      return false;
+    }
+    final RegExp passwordRegex = RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$');
+    if (!passwordRegex.hasMatch(passwordController.text)) {
+      errorMessage = 'La contraseña debe tener al menos 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial';
       isLoading = false;
       notifyListeners();
       return false;
@@ -49,12 +77,37 @@ class RegisterViewModel extends ChangeNotifier {
       return false;
     }
 
-    // Mock API delay
-    await Future.delayed(const Duration(seconds: 1));
+    // API call
+    final remoteDataSource = AuthRemoteDataSource();
+    final repository = AuthRepositoryImpl(remoteDataSource);
+    final registerUseCase = RegisterUserUseCase(repository);
 
-    // Mock success
+    final user = UserEntity(
+      nombre: nameController.text.trim(),
+      apellidoPaterno: apellidoPaternoController.text.trim(),
+      apellidoMaterno: apellidoMaternoController.text.trim(),
+      correo: emailController.text.trim(),
+      contrasena: passwordController.text,
+    );
+
+    bool success;
+    try {
+      success = await registerUseCase(user);
+    } on DioException catch (e) {
+      success = false;
+      errorMessage = e.response?.data['detail']?.toString() ?? 'Error del servidor';
+    } catch (e) {
+      success = false;
+      errorMessage = 'Error de conexión';
+    }
+
     isLoading = false;
     notifyListeners();
-    return true;
+
+    if (!success) {
+      errorMessage ??= 'Error al crear la cuenta. Verifica los datos e inténtalo más tarde.';
+    }
+
+    return success;
   }
 }

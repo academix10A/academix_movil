@@ -40,5 +40,10 @@ class ProfileRepositoryImpl implements ProfileRepository {
   Future<int> getResourcesCount() {
     return remote.getResourcesCount();
   }
+
+  @override
+  Future<int> getNoteCount() {
+    return remote.getNoteCount();
+  }
 }
 

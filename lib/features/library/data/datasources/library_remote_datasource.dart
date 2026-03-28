@@ -1,6 +1,6 @@
 import '../../../../core/network/dio_client.dart';
 import '../../domain/entities/library_entity.dart';
-import 'package:academix/features/tema/domain/entities/tema_entity.dart';
+import 'package:academix/features/library/domain/entities/tema_entity.dart';
 
 class LibraryRemoteDataSource {
   Future<List<LibraryResourceEntity>> getResources() async {

@@ -16,6 +16,13 @@ class ExamRemoteDataSource {
     return ExamEntity.fromJson(response.data);
   }
 
+  /// New: Fetch complete exam with questions/options for taking exam
+  Future<ExamEntity> getExamCompleto(int id) async {
+    final response = await DioClient.dio.get('/examen/$id/completo');
+
+    return ExamEntity.fromCompletoJson(response.data);
+  }
+
   Future<List<CompletedExamEntity>> getCompletedExams() async {
     final response = await DioClient.dio.get('/intento/usuario');
 
@@ -26,14 +33,24 @@ class ExamRemoteDataSource {
 
   Future<CompletedExamEntity> submitExam({
     required int idExamen,
-    required Map<int, int> respuestas,
+    required Map<int, int> respuestas, // id_pregunta -> id_opcion
   }) async {
-    final response = await DioClient.dio.post('/intento/', data: {
-      'id_examen': idExamen,
-      'respuestas': respuestas,
-    });
+    // Get current user ID
+    final userResp = await DioClient.dio.get('/usuarios/me');
+    final idUsuario = userResp.data['id_usuario'];
 
-    return CompletedExamEntity.fromJson(response.data);
+    final payload = {
+      'id_examen': idExamen,
+      'id_usuario': idUsuario,
+      'respuestas': respuestas.entries.map((entry) => {
+        'id_pregunta': entry.key,
+        'id_opcion': entry.value,
+      }).toList(),
+    };
+
+    final response = await DioClient.dio.post('/examen/submit', data: payload);
+
+    return CompletedExamEntity.fromSubmitJson(response.data);
   }
 }
 

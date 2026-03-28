@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:academix/core/routes/app_routes.dart';
 import 'package:academix/features/note/domain/entities/note_entity.dart';
+import 'package:academix/features/library/domain/entities/library_entity.dart';
 import 'package:academix/features/note/data/datasources/note_remote_datasource.dart';
+import 'package:academix/features/library/presentation/viewmodel/library_viewmodel.dart';
 
 enum NoteFilter {
   todos,
@@ -23,29 +25,39 @@ enum NoteFilter {
 class NoteItem {
   final String id;
   final String title;
+  final String content;
   final String preview;
   final String timeAgo;
   final List<String> tags;
   final bool isShared;
+  final LibraryResource? resource;
 
   const NoteItem({
     required this.id,
     required this.title,
+    required this.content,
     required this.preview,
     required this.timeAgo,
     required this.tags,
     this.isShared = false,
+    this.resource,
   });
+
+  bool get hasResource => resource != null;
 
   // Mapper desde entity
   factory NoteItem.fromEntity(NoteEntity entity) {
     return NoteItem(
       id: entity.idNota.toString(),
       title: entity.title,
+      content: entity.contenido,
       preview: entity.preview,
       timeAgo: entity.timeAgo,
       tags: entity.tags,
       isShared: entity.isShared,
+      resource: entity.recurso != null
+        ? LibraryResource.fromEntity(entity.recurso!)
+        : null,
     );
   }
 }

@@ -16,6 +16,45 @@ class _SearchScreenState extends State<SearchScreen> {
   final SearchViewModel vm = SearchViewModel();
 
   @override
+  void initState() {
+    super.initState();
+    // Lee el argumento antes del primer frame para evitar
+    // que el autofocus dispare listeners con texto vacío.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final String? query =
+          ModalRoute.of(context)?.settings.arguments as String?;
+      if (query != null && query.isNotEmpty) {
+        // 1. Asigna el texto sin notificar listeners intermedios
+        vm.searchController.value = TextEditingValue(
+          text: query,
+          selection: TextSelection.collapsed(offset: query.length),
+        );
+        // 2. Ejecuta la búsqueda directamente con el query
+        vm.fetchResults(query);
+      }
+    });
+  }
+
+  bool _initialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (!_initialized) {
+      final String? query =
+          ModalRoute.of(context)?.settings.arguments as String?;
+
+      if (query != null && query.isNotEmpty) {
+        vm.searchController.text = query;
+        vm.fetchResults(query);
+      }
+
+      _initialized = true;
+    }
+  }
+
+  @override
   void dispose() {
     vm.dispose();
     super.dispose();
@@ -24,6 +63,7 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.background,
@@ -58,7 +98,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
-                  // Search field prominente
+                  // Search field
                   TextField(
                     controller: vm.searchController,
                     onChanged: vm.onSearch,
@@ -66,10 +106,12 @@ class _SearchScreenState extends State<SearchScreen> {
                     style: AppTextStyles.body.copyWith(color: AppColors.text),
                     decoration: InputDecoration(
                       hintText: 'Buscar temas, títulos...',
-                      hintStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted),
+                      hintStyle: AppTextStyles.bodySmall
+                          .copyWith(color: AppColors.textMuted),
                       filled: true,
                       fillColor: AppColors.backgroundCard,
-                      prefixIcon: Icon(Icons.search, color: AppColors.textMuted),
+                      prefixIcon:
+                          Icon(Icons.search, color: AppColors.textMuted),
                       suffixIcon: IconButton(
                         icon: Icon(Icons.clear, color: AppColors.textMuted),
                         onPressed: () {
@@ -95,27 +137,41 @@ class _SearchScreenState extends State<SearchScreen> {
                       children: vm.tabs.map((tab) {
                         final isSelected = vm.selectedTab == tab;
                         return GestureDetector(
-                          onTap: () => vm.selectTab(tab),
+                          onTap: () {
+                            setState(() {
+                              vm.selectTab(tab);
+                            });
+                          },
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
-                            margin: const EdgeInsets.only(right: AppSpacing.sm),
+                            margin:
+                                const EdgeInsets.only(right: AppSpacing.sm),
                             padding: const EdgeInsets.symmetric(
                               horizontal: AppSpacing.md,
                               vertical: AppSpacing.sm,
                             ),
                             decoration: BoxDecoration(
-                              color: isSelected ? AppColors.primary : Colors.transparent,
-                              borderRadius: BorderRadius.circular(AppRadius.full),
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : Colors.transparent,
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.full),
                               border: Border.all(
-                                color: isSelected ? AppColors.primary : AppColors.border,
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : AppColors.border,
                                 width: 1.5,
                               ),
                             ),
                             child: Text(
                               tab,
                               style: AppTextStyles.bodySmall.copyWith(
-                                color: isSelected ? AppColors.background : AppColors.text,
-                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                                color: isSelected
+                                    ? AppColors.background
+                                    : AppColors.text,
+                                fontWeight: isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
                               ),
                             ),
                           ),
@@ -136,25 +192,30 @@ class _SearchScreenState extends State<SearchScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.search_off, size: 64, color: AppColors.textMuted),
+                          Icon(Icons.search_off,
+                              size: 64, color: AppColors.textMuted),
                           const SizedBox(height: AppSpacing.md),
                           Text(
                             'No se encontraron resultados',
-                            style: AppTextStyles.h2.copyWith(color: AppColors.textMuted),
+                            style: AppTextStyles.h2
+                                .copyWith(color: AppColors.textMuted),
                           ),
                           const SizedBox(height: AppSpacing.sm),
                           Text(
                             'Prueba con otra palabra clave',
-                            style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted),
+                            style: AppTextStyles.bodySmall
+                                .copyWith(color: AppColors.textMuted),
                           ),
                         ],
                       ),
                     );
                   }
                   return ListView.separated(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg),
                     itemCount: results.length,
-                    separatorBuilder: (_,__) => const SizedBox(height: AppSpacing.md),
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(height: AppSpacing.md),
                     itemBuilder: (context, index) {
                       final result = results[index];
                       return _SearchResultCard(
@@ -220,26 +281,33 @@ class _SearchResultCard extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
-                    result.tema,
-                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted),
+                    result.usuario ?? result.type.toUpperCase(),
+                    style: AppTextStyles.bodySmall
+                        .copyWith(color: AppColors.textMuted),
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     result.preview,
-                    style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+                    style: AppTextStyles.caption
+                        .copyWith(color: AppColors.textMuted),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm, vertical: 2),
                     decoration: BoxDecoration(
                       color: _getTypeColor(result.type),
                       borderRadius: BorderRadius.circular(AppRadius.sm),
                     ),
                     child: Text(
                       result.type.toUpperCase(),
-                      style: AppTextStyles.caption.copyWith(color: AppColors.background, fontSize: 10, fontWeight: FontWeight.w600),
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.background,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
