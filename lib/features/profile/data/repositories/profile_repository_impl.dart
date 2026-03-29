@@ -15,11 +15,13 @@ class ProfileRepositoryImpl implements ProfileRepository {
   @override
   Future<UserProfileEntity> updateProfile({
     String? nombre,
-    String? fotoPerfil,
+    String? apellidoPaterno,
+    String? apellidoMaterno,
   }) {
     return remote.updateProfile(
       nombre: nombre,
-      fotoPerfil: fotoPerfil,
+      apellidoPaterno: apellidoPaterno,
+      apellidoMaterno: apellidoMaterno,
     );
   }
 

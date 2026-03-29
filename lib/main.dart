@@ -6,6 +6,7 @@ import 'core/routes/app_routes.dart';
 import 'features/home/presentation/view/main_screen.dart';
 import 'features/library/presentation/view/book_detail_screen.dart';
 import 'features/note/presentation/view/note_detail_screen.dart';
+import 'features/note/presentation/view/create_note_screen.dart';
 import 'features/exam/presentation/view/exam_take_screen.dart';
 import 'features/exam/presentation/view/exam_result_screen.dart';
 import 'features/profile/presentation/view/settings_screen.dart';
@@ -64,6 +65,8 @@ class MyApp extends StatelessWidget {
             return MaterialPageRoute(
               builder: (_) => NoteDetailScreen(note: note),
             );
+          case AppRoutes.createNote:
+            return MaterialPageRoute(builder: (_) => const CreateNoteScreen());
           case AppRoutes.examTake:
             final exam = settings.arguments as ExamItem;
             return MaterialPageRoute(

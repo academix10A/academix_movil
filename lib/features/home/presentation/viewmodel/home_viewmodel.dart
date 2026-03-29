@@ -3,6 +3,8 @@ import '../../domain/usecases/get_home_data_usecase.dart';
 import '../../domain/entities/home_entity.dart';
 import '../../data/repositories/home_repository_impl.dart';
 import '../../data/datasources/home_remote_datasource.dart';
+import 'package:academix/core/routes/app_routes.dart';
+import 'package:academix/features/library/presentation/viewmodel/library_viewmodel.dart';
 
 class HomeViewModel {
 
@@ -44,8 +46,21 @@ class HomeViewModel {
     }
   }
 
-  void onRecentItemTap(RecentItemEntity item) {
-    print("Item seleccionado: ${item.title}");
+  void onRecentItemTap(BuildContext context, RecentItemEntity item) {
+    final resource = LibraryResource(
+      id: item.id.toString(),
+      title: item.title,
+      category: item.category,
+      description: item.subtitle,
+      durationMinutes: 0,
+      pages: 0,
+    );
+
+    AppNavigator.push(
+      context,
+      AppRoutes.bookDetail,
+      arguments: resource,
+    );
   }
 
   void dispose() {

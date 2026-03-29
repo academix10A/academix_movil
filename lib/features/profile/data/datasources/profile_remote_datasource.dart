@@ -11,7 +11,8 @@ class ProfileRemoteDataSource {
 
   Future<UserProfileEntity> updateProfile({
     String? nombre,
-    String? fotoPerfil,
+    String? apellidoPaterno,
+    String? apellidoMaterno,
   }) async {
     // First get current user to get the user ID
     final userResponse = await DioClient.dio.get('/usuarios/me');
@@ -20,7 +21,10 @@ class ProfileRemoteDataSource {
     final Map<String, dynamic> data = {};
     
     if (nombre != null) data['nombre'] = nombre;
-    if (fotoPerfil != null) data['foto_perfil'] = fotoPerfil;
+    if (apellidoPaterno != null) data['apellido_paterno'] = apellidoPaterno;
+    if (apellidoMaterno != null) data['apellido_materno'] = apellidoMaterno;
+
+    print("DATOS ANTES DE ENVIAR $data");
 
     final response = await DioClient.dio.put('/usuarios/$userId', data: data);
 

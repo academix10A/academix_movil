@@ -22,6 +22,7 @@ class HomeRemoteDataSource {
 
     return data.map((e) =>
       RecentItemEntity(
+        id: e['id'] ?? '',
         title: e['titulo'] ?? '',
         subtitle: e['descripcion'] ?? '',
         category: e['tipo'] ?? '',

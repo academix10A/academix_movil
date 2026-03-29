@@ -5,6 +5,7 @@ import 'package:academix/core/themes/app_colors.dart';
 import 'package:academix/core/constants/app_radius.dart';
 import 'package:academix/features/note/presentation/viewmodel/notes_viewmodel.dart';
 import 'package:academix/features/note/presentation/widgets/note_card.dart';
+import 'package:academix/features/note/presentation/view/create_note_screen.dart';
 
 class NotesScreen extends StatefulWidget {
   const NotesScreen({super.key});
@@ -28,6 +29,14 @@ class _NotesScreenState extends State<NotesScreen> {
     super.dispose();
   }
 
+  /// Abre CreateNoteScreen sin recurso preseleccionado (el usuario elige).
+  void _openCreateNote() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const CreateNoteScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -44,7 +53,7 @@ class _NotesScreenState extends State<NotesScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header con logo
+                  // ── Logo ─────────────────────────────────────────────────
                   Text(
                     "ACADEMIX",
                     style: AppTextStyles.display.copyWith(
@@ -56,7 +65,7 @@ class _NotesScreenState extends State<NotesScreen> {
 
                   const SizedBox(height: AppSpacing.lg),
 
-                  // Título sección
+                  // ── Título sección ────────────────────────────────────────
                   Text(
                     "Mis notas",
                     style: AppTextStyles.h1.copyWith(
@@ -76,7 +85,7 @@ class _NotesScreenState extends State<NotesScreen> {
 
                   const SizedBox(height: AppSpacing.lg),
 
-                  // Barra de búsqueda
+                  // ── Barra de búsqueda ─────────────────────────────────────
                   TextField(
                     controller: vm.searchController,
                     onSubmitted: vm.onSearch,
@@ -95,7 +104,8 @@ class _NotesScreenState extends State<NotesScreen> {
                         color: AppColors.textMuted,
                       ),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.full),
+                        borderRadius:
+                            BorderRadius.circular(AppRadius.full),
                         borderSide: BorderSide.none,
                       ),
                       contentPadding: const EdgeInsets.symmetric(
@@ -107,7 +117,7 @@ class _NotesScreenState extends State<NotesScreen> {
 
                   const SizedBox(height: AppSpacing.md),
 
-                  // Filtros de tipo de nota
+                  // ── Filtros de tipo de nota ───────────────────────────────
                   ValueListenableBuilder<NoteFilter>(
                     valueListenable: vm.selectedFilter,
                     builder: (context, selected, _) {
@@ -115,7 +125,8 @@ class _NotesScreenState extends State<NotesScreen> {
                         children: NoteFilter.values.map((filter) {
                           final isSelected = selected == filter;
                           return Padding(
-                            padding: const EdgeInsets.only(right: AppSpacing.sm),
+                            padding:
+                                const EdgeInsets.only(right: AppSpacing.sm),
                             child: GestureDetector(
                               onTap: () => vm.selectFilter(filter),
                               child: AnimatedContainer(
@@ -128,8 +139,8 @@ class _NotesScreenState extends State<NotesScreen> {
                                   color: isSelected
                                       ? AppColors.primary
                                       : Colors.transparent,
-                                  borderRadius:
-                                      BorderRadius.circular(AppRadius.full),
+                                  borderRadius: BorderRadius.circular(
+                                      AppRadius.full),
                                   border: Border.all(
                                     color: isSelected
                                         ? AppColors.primary
@@ -159,7 +170,7 @@ class _NotesScreenState extends State<NotesScreen> {
               ),
             ),
 
-            // Lista de notas (scrollable)
+            // ── Lista de notas ────────────────────────────────────────────
             Expanded(
               child: ValueListenableBuilder<List<NoteItem>>(
                 valueListenable: vm.filteredNotes,
@@ -197,9 +208,9 @@ class _NotesScreenState extends State<NotesScreen> {
         ),
       ),
 
-      // FAB para crear nueva nota
+      // ── FAB: abre CreateNoteScreen sin recurso bloqueado ─────────────────
       floatingActionButton: FloatingActionButton(
-        onPressed: vm.onCreateNote,
+        onPressed: _openCreateNote,
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.background,
         elevation: 0,

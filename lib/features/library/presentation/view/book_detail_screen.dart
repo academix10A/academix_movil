@@ -8,6 +8,7 @@ import 'package:academix/features/library/presentation/view/ai_chat_screen.dart'
 import 'package:academix/features/library/presentation/viewmodel/book_detail_viewmodel.dart';
 import 'package:academix/features/library/presentation/viewmodel/library_viewmodel.dart';
 import 'package:academix/features/library/domain/entities/library_entity.dart';
+import 'package:academix/features/note/presentation/view/create_note_screen.dart';
 
 class BookDetailScreen extends StatefulWidget {
   final LibraryResource resource;
@@ -51,6 +52,19 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     );
   }
 
+  /// Navega a CreateNoteScreen con el recurso ya preseleccionado y bloqueado.
+  void _openCreateNote(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CreateNoteScreen(
+          preselectedResourceId: int.parse(widget.resource.id),
+          preselectedResourceTitle: widget.resource.title,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,7 +74,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
           SafeArea(
             child: Column(
               children: [
-                // Header
+                // ── Header ───────────────────────────────────────────────
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.lg,
@@ -85,6 +99,29 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                         ),
                       ),
                       const Spacer(),
+                      // Botón nueva nota — solo visible en modo lectura
+                      if (_isReadingMode) ...[
+                        GestureDetector(
+                          onTap: () => _openCreateNote(context),
+                          child: Container(
+                            padding: const EdgeInsets.all(AppSpacing.sm),
+                            decoration: BoxDecoration(
+                              color: AppColors.backgroundCard,
+                              borderRadius: BorderRadius.circular(AppRadius.md),
+                              border: Border.all(
+                                color: AppColors.primary.withOpacity(0.4),
+                                width: 1,
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.edit_note_rounded,
+                              color: AppColors.primary,
+                              size: 22,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                      ],
                       // Botón modo lectura
                       GestureDetector(
                         onTap: () {
@@ -110,7 +147,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                         ),
                       ),
                       const SizedBox(width: AppSpacing.sm),
-                      // Botón aumentar fonte
+                      // Botón aumentar fuente
                       GestureDetector(
                         onTap: () {
                           setState(() {
@@ -134,7 +171,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                   ),
                 ),
 
-                // Contenido scrollable
+                // ── Contenido scrollable ──────────────────────────────────
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.symmetric(
@@ -162,7 +199,8 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                           ),
                           decoration: BoxDecoration(
                             color: AppColors.primary.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(AppRadius.full),
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.full),
                           ),
                           child: Text(
                             widget.resource.category,
@@ -180,7 +218,8 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                           children: [
                             _InfoChip(
                               icon: Icons.access_time_rounded,
-                              label: "${widget.resource.durationMinutes} min",
+                              label:
+                                  "${widget.resource.durationMinutes} min",
                             ),
                             const SizedBox(width: AppSpacing.md),
                             _InfoChip(
@@ -225,24 +264,28 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                             valueListenable: vm.isLoading,
                             builder: (context, loading, _) {
                               if (loading) {
-                                return const Center(child: CircularProgressIndicator());
+                                return const Center(
+                                    child: CircularProgressIndicator());
                               }
 
-                              return ValueListenableBuilder<LibraryResourceEntity?>(
+                              return ValueListenableBuilder<
+                                  LibraryResourceEntity?>(
                                 valueListenable: vm.resource,
                                 builder: (context, resource, _) {
                                   if (resource == null) {
-                                    return const Text("Error al cargar contenido");
+                                    return const Text(
+                                        "Error al cargar contenido");
                                   }
 
                                   return _ReadingContent(
                                     fontSize: _fontSize,
-                                    content: resource.contenido ?? "Sin contenido",
+                                    content: resource.contenido ??
+                                        "Sin contenido",
                                   );
                                 },
                               );
                             },
-                          )
+                          ),
                         ],
 
                         const SizedBox(height: AppSpacing.xxl),
@@ -251,7 +294,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                   ),
                 ),
 
-                // Botón empezar a leer
+                // ── Botón empezar a leer ──────────────────────────────────
                 if (!_isReadingMode)
                   Padding(
                     padding: const EdgeInsets.all(AppSpacing.lg),
@@ -295,7 +338,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
             ),
           ),
 
-          // AI Button overlay when reading
+          // ── AI Button overlay (modo lectura) ─────────────────────────────
           if (_isReadingMode)
             Positioned(
               right: AppSpacing.xl,
@@ -328,6 +371,8 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     );
   }
 }
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
 
 class _InfoChip extends StatelessWidget {
   final IconData icon;
