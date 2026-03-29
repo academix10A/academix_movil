@@ -20,6 +20,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   
   // Form controllers
   final _nameController = TextEditingController();
+  final _apellidoPaternoController = TextEditingController();
+  final _apellidoMaternoController = TextEditingController();
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -35,7 +37,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final user = await _dataSource.getCurrentUser();
       setState(() {
         _user = user;
-        _nameController.text = user.fullName;
+        _nameController.text = user.userName;
+        _apellidoPaternoController.text = user.apellidoPaterno;
+        _apellidoMaternoController.text = user.apellidoMaterno;
         _isLoading = false;
       });
     } catch (e) {
@@ -58,8 +62,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
       return;
     }
 
+    if (_apellidoPaternoController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('El apellido paterno no puede estar vacío')),
+      );
+      return;
+    }
+
+    if (_apellidoMaternoController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('El apellido materno no puede estar vacío')),
+      );
+      return;
+    }
+
     try {
-      await _dataSource.updateProfile(nombre: _nameController.text);
+      await _dataSource.updateProfile(nombre: _nameController.text, apellidoPaterno: _apellidoPaternoController.text, apellidoMaterno: _apellidoMaternoController.text);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Perfil actualizado correctamente')),
@@ -165,8 +183,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _SettingsCard(
                     children: [
                       _InputField(
-                        label: 'Nombre completo',
+                        label: 'Nombre',
                         controller: _nameController,
+                        hintText: 'Ingresa tu nombre',
+                      ),
+                      _InputField(
+                        label: 'Apellido Paterno',
+                        controller: _apellidoPaternoController,
+                        hintText: 'Ingresa tu apellido paterno',
+                      ),
+                      _InputField(
+                        label: 'Apellido Materno',
+                        controller: _apellidoMaternoController,
                         hintText: 'Ingresa tu nombre',
                       ),
                       const SizedBox(height: AppSpacing.md),
@@ -249,42 +277,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                   const SizedBox(height: AppSpacing.xl),
 
-                  // Notifications Section
-                  _SectionTitle(title: 'Notificaciones'),
-                  const SizedBox(height: AppSpacing.md),
+                  // // Notifications Section
+                  // _SectionTitle(title: 'Notificaciones'),
+                  // const SizedBox(height: AppSpacing.md),
                   
-                  _SettingsCard(
-                    children: [
-                      _SettingsToggle(
-                        title: 'Notificaciones push',
-                        subtitle: 'Recibe notificaciones en tu dispositivo',
-                        value: true,
-                        onChanged: (value) {
-                          // TODO: Implement notification toggle
-                        },
-                      ),
-                      const Divider(color: AppColors.textMuted),
-                      _SettingsToggle(
-                        title: 'Notificaciones de exámenes',
-                        subtitle: 'Te notificamos cuando haya nuevos exámenes',
-                        value: true,
-                        onChanged: (value) {
-                          // TODO: Implement notification toggle
-                        },
-                      ),
-                      const Divider(color: AppColors.textMuted),
-                      _SettingsToggle(
-                        title: 'Notificaciones de recursos',
-                        subtitle: 'Te notify when new resources are available',
-                        value: false,
-                        onChanged: (value) {
-                          // TODO: Implement notification toggle
-                        },
-                      ),
-                    ],
-                  ),
+                  // _SettingsCard(
+                  //   children: [
+                  //     _SettingsToggle(
+                  //       title: 'Notificaciones push',
+                  //       subtitle: 'Recibe notificaciones en tu dispositivo',
+                  //       value: true,
+                  //       onChanged: (value) {
+                  //         // TODO: Implement notification toggle
+                  //       },
+                  //     ),
+                  //     const Divider(color: AppColors.textMuted),
+                  //     _SettingsToggle(
+                  //       title: 'Notificaciones de exámenes',
+                  //       subtitle: 'Te notificamos cuando haya nuevos exámenes',
+                  //       value: true,
+                  //       onChanged: (value) {
+                  //         // TODO: Implement notification toggle
+                  //       },
+                  //     ),
+                  //     const Divider(color: AppColors.textMuted),
+                  //     _SettingsToggle(
+                  //       title: 'Notificaciones de recursos',
+                  //       subtitle: 'Te notify when new resources are available',
+                  //       value: false,
+                  //       onChanged: (value) {
+                  //         // TODO: Implement notification toggle
+                  //       },
+                  //     ),
+                  //   ],
+                  // ),
 
-                  const SizedBox(height: AppSpacing.xl),
+                  // const SizedBox(height: AppSpacing.xl),
 
                   // Account Info
                   _SectionTitle(title: 'Información de la cuenta'),
@@ -301,11 +329,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         label: 'Miembro desde',
                         value: _user?.memberSince ?? 'N/A',
                       ),
-                      const Divider(color: AppColors.textMuted),
-                      _InfoRow(
-                        label: 'Último acceso',
-                        value: _user?.lastAccess ?? 'N/A',
-                      ),
+                      // const Divider(color: AppColors.textMuted),
+                      // _InfoRow(
+                      //   label: 'Último acceso',
+                      //   value: _user?.lastAccess ?? 'N/A',
+                      // ),
                     ],
                   ),
 

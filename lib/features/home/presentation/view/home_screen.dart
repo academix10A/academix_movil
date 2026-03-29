@@ -325,7 +325,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               const EdgeInsets.only(bottom: AppSpacing.md),
                           child: RecentItemCard(
                             item: item,
-                            onTap: () => vm.onRecentItemTap(item),
+                            onTap: () => vm.onRecentItemTap(context, item),
                           ),
                         );
                       }).toList(),

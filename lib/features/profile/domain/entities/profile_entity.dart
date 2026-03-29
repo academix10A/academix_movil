@@ -60,6 +60,10 @@ class UserProfileEntity {
   // Mapper para compatibilidad con la UI existente
   String get userName => nombre;
 
+  String get apellidoPaternoName => apellidoPaterno;
+
+  String get apellidoMaternoName => apellidoMaterno;
+
   String get userEmail => email;
 
   String get avatarUrl => fotoPerfil ?? '';

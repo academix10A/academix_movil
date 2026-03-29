@@ -4,9 +4,19 @@ import 'package:academix/core/themes/app_text_styles.dart';
 import 'package:academix/core/themes/app_colors.dart';
 import 'package:academix/core/constants/app_radius.dart';
 import 'package:academix/features/note/presentation/viewmodel/create_note_viewmodel.dart';
+import '../widgets/select_resource_bottomsheet.dart';
 
 class CreateNoteScreen extends StatefulWidget {
-  const CreateNoteScreen({super.key});
+  /// Si viene desde un libro, pasa el id y título del recurso.
+  /// Cuando están presentes el recurso se muestra bloqueado (no se puede quitar).
+  final int? preselectedResourceId;
+  final String? preselectedResourceTitle;
+
+  const CreateNoteScreen({
+    super.key,
+    this.preselectedResourceId,
+    this.preselectedResourceTitle,
+  });
 
   @override
   State<CreateNoteScreen> createState() => _CreateNoteScreenState();
@@ -14,6 +24,21 @@ class CreateNoteScreen extends StatefulWidget {
 
 class _CreateNoteScreenState extends State<CreateNoteScreen> {
   final CreateNoteViewModel vm = CreateNoteViewModel();
+
+  /// True cuando la pantalla fue abierta desde un libro (recurso bloqueado).
+  bool get _hasLockedResource => widget.preselectedResourceId != null;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_hasLockedResource) {
+      // Preselecciona el recurso sin permitir modificarlo.
+      vm.setSelectedResource(
+        widget.preselectedResourceId,
+        widget.preselectedResourceTitle,
+      );
+    }
+  }
 
   @override
   void dispose() {
@@ -38,7 +63,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
         ),
         actions: [
           ValueListenableBuilder<bool>(
-            valueListenable: ValueNotifier(vm.isLoading),
+            valueListenable: vm.isLoading,
             builder: (context, loading, _) => loading
                 ? Padding(
                     padding: const EdgeInsets.all(16.0),
@@ -55,7 +80,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                     icon: Icon(Icons.check, color: AppColors.primary),
                     onPressed: () async {
                       final success = await vm.saveNote();
-                      if (success) {
+                      if (success && context.mounted) {
                         Navigator.pop(context);
                       }
                     },
@@ -69,7 +94,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Título
+              // ── Título ──────────────────────────────────────────────────
               TextField(
                 controller: vm.titleController,
                 style: AppTextStyles.h1.copyWith(
@@ -89,7 +114,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
               ),
               const SizedBox(height: AppSpacing.xl),
 
-              // Toggle pública
+              // ── Toggle pública ──────────────────────────────────────────
               Row(
                 children: [
                   Switch(
@@ -109,7 +134,9 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                         ),
                       ),
                       Text(
-                        vm.isPublic ? "Otros usuarios podrán verla" : "Solo tú podrás verla",
+                        vm.isPublic
+                            ? "Otros usuarios podrán verla"
+                            : "Solo tú podrás verla",
                         style: AppTextStyles.bodySmall.copyWith(
                           color: AppColors.textMuted,
                         ),
@@ -120,7 +147,102 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
               ),
               const SizedBox(height: AppSpacing.lg),
 
-              // Tags
+              // ── Recurso ─────────────────────────────────────────────────
+              Text(
+                _hasLockedResource
+                    ? "Recurso vinculado"
+                    : "Recurso (opcional)",
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.text,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+
+              if (_hasLockedResource)
+                // Recurso bloqueado: muestra badge sin botón de quitar
+                _LockedResourceBadge(title: widget.preselectedResourceTitle ?? '')
+              else
+                // Recurso libre: puede seleccionar o quitar
+                ValueListenableBuilder<bool>(
+                  valueListenable: vm.hasResource,
+                  builder: (context, hasResource, _) =>
+                      ValueListenableBuilder<String?>(
+                    valueListenable: vm.selectedResourceTitle,
+                    builder: (context, title, _) {
+                      if (!hasResource) {
+                        return OutlinedButton.icon(
+                          onPressed: () => SelectResourceBottomSheet.show(
+                            context,
+                            onSelected: (id, resourceTitle) =>
+                                vm.setSelectedResource(id, resourceTitle),
+                          ),
+                          icon: Icon(
+                            Icons.menu_book,
+                            size: 20,
+                            color: AppColors.primary,
+                          ),
+                          label: const Text('Seleccionar recurso'),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(
+                                color: AppColors.primary, width: 1.5),
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.full),
+                            ),
+                          ),
+                        );
+                      }
+                      return Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.sm, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: AppColors.accent.withOpacity(0.1),
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.full),
+                              border: Border.all(
+                                  color: AppColors.accent, width: 1),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.menu_book,
+                                    size: 16, color: AppColors.accent),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    title ?? '',
+                                    style: AppTextStyles.caption.copyWith(
+                                      color: AppColors.accent,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 12,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.xs),
+                          IconButton(
+                            onPressed: () =>
+                                vm.setSelectedResource(null, null),
+                            icon: Icon(Icons.close,
+                                size: 16, color: AppColors.textMuted),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+
+              const SizedBox(height: AppSpacing.lg),
+
+              // ── Tags ─────────────────────────────────────────────────────
               Text(
                 "Etiquetas (opcional)",
                 style: AppTextStyles.bodySmall.copyWith(
@@ -130,7 +252,6 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
               ),
               const SizedBox(height: AppSpacing.sm),
 
-              // Tag input
               Row(
                 children: [
                   Expanded(
@@ -144,7 +265,8 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                         filled: true,
                         fillColor: AppColors.backgroundCard,
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppRadius.full),
+                          borderRadius:
+                              BorderRadius.circular(AppRadius.full),
                           borderSide: BorderSide.none,
                         ),
                         contentPadding: const EdgeInsets.symmetric(
@@ -156,9 +278,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   ElevatedButton(
-                    onPressed: () {
-                      vm.addTag('nueva-etiqueta');
-                    },
+                    onPressed: () => vm.addTag('nueva-etiqueta'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       shape: const CircleBorder(),
@@ -170,29 +290,33 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
               ),
               const SizedBox(height: AppSpacing.md),
 
-              // Tags list
               ValueListenableBuilder<List<String>>(
                 valueListenable: vm.tags,
                 builder: (context, tags, _) => Wrap(
                   spacing: AppSpacing.sm,
                   runSpacing: AppSpacing.sm,
-                  children: tags.map((tag) => Chip(
-                    label: Text(
-                      tag,
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.background,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    backgroundColor: AppColors.primary,
-                    deleteIcon: const Icon(Icons.close, size: 16, color: Colors.white),
-                    onDeleted: () => vm.removeTag(tag),
-                  )).toList(),
+                  children: tags
+                      .map(
+                        (tag) => Chip(
+                          label: Text(
+                            tag,
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.background,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          backgroundColor: AppColors.primary,
+                          deleteIcon: const Icon(Icons.close,
+                              size: 16, color: Colors.white),
+                          onDeleted: () => vm.removeTag(tag),
+                        ),
+                      )
+                      .toList(),
                 ),
               ),
               const SizedBox(height: AppSpacing.xl),
 
-              // Contenido principal
+              // ── Contenido principal ──────────────────────────────────────
               Text(
                 "Contenido",
                 style: AppTextStyles.bodySmall.copyWith(
@@ -232,17 +356,24 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                 ),
               ),
 
-              if (vm.errorMessage != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: AppSpacing.md),
-                  child: Text(
-                    vm.errorMessage!,
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.error,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
+              ValueListenableBuilder<String?>(
+                valueListenable: vm.errorMessage,
+                builder: (context, error, _) {
+                  if (error != null) {
+                    return Padding(
+                      padding: const EdgeInsets.only(top: AppSpacing.md),
+                      child: Text(
+                        error,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.error,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
 
               const SizedBox(height: AppSpacing.xxl),
             ],
@@ -253,3 +384,56 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
   }
 }
 
+// ── Widget auxiliar: badge de recurso bloqueado ────────────────────────────────
+
+class _LockedResourceBadge extends StatelessWidget {
+  final String title;
+
+  const _LockedResourceBadge({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(AppRadius.full),
+        border: Border.all(
+          color: AppColors.primary.withOpacity(0.5),
+          width: 1.5,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.menu_book_rounded,
+            size: 16,
+            color: AppColors.primary,
+          ),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              title,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w600,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 6),
+          // Candado — indica que no se puede cambiar
+          Icon(
+            Icons.lock_rounded,
+            size: 14,
+            color: AppColors.primary.withOpacity(0.7),
+          ),
+        ],
+      ),
+    );
+  }
+}

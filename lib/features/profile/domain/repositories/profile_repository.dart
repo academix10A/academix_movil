@@ -4,7 +4,8 @@ abstract class ProfileRepository {
   Future<UserProfileEntity> getCurrentUser();
   Future<UserProfileEntity> updateProfile({
     String? nombre,
-    String? fotoPerfil,
+    String? apellidoPaterno,
+    String? apellidoMaterno,
   });
   Future<void> changePassword(String currentPassword, String newPassword);
   Future<UserStatsEntity> getUserStats();

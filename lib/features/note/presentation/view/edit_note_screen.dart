@@ -50,7 +50,7 @@ class _EditNoteScreenState extends State<EditNoteScreen> {
         ),
         actions: [
           ValueListenableBuilder<bool>(
-            valueListenable: ValueNotifier(vm.isLoading),
+            valueListenable: vm.isLoading,
             builder: (context, loading, _) => loading
                 ? Padding(
                     padding: const EdgeInsets.all(16.0),
@@ -148,17 +148,24 @@ class _EditNoteScreenState extends State<EditNoteScreen> {
               // Contenido same
               // ... 
 
-              if (vm.errorMessage != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: AppSpacing.md),
-                  child: Text(
-                    vm.errorMessage!,
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.error,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
+              ValueListenableBuilder<String?>(
+                valueListenable: vm.errorMessage,
+                builder: (context, error, _) {
+                  if (error != null) {
+                    return Padding(
+                      padding: const EdgeInsets.only(top: AppSpacing.md),
+                      child: Text(
+                        error,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.error,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
 
               const SizedBox(height: AppSpacing.xxl),
             ],

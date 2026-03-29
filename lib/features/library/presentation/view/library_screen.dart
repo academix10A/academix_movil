@@ -282,7 +282,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       AppSpacing.lg,
                     ),
                     itemCount: resources.length,
-                    separatorBuilder: (_, __) =>
+                    separatorBuilder: (_, _) =>
                         const SizedBox(height: AppSpacing.md),
                     itemBuilder: (context, index) {
                       return Hero(
@@ -404,3 +404,5 @@ class _LibraryScreenState extends State<LibraryScreen> {
     );
   }
 }
+
+  

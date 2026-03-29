@@ -26,6 +26,7 @@ abstract class AppRoutes {
   // Detail screens
   static const String bookDetail = '/book-detail';
   static const String noteDetail = '/note-detail';
+  static const String createNote = '/create-note';
   static const String examTake = '/exam-take';
   static const String examResult = '/exam-result';
   static const String register = '/register';
