@@ -17,11 +17,13 @@ class NoteRemoteDataSource {
   }
 
   Future<NoteEntity> createNote({
+    required String titulo,
     required String contenido,
     int? idRecurso,
     bool esCompartida = false,
   }) async {
     final response = await DioClient.dio.post('/notas/', data: {
+      'titulo': titulo,
       'contenido': contenido,
       'id_recurso': idRecurso,
       'es_compartida': esCompartida,
@@ -32,10 +34,15 @@ class NoteRemoteDataSource {
 
   Future<NoteEntity> updateNote({
     required int id,
+    required String titulo,
     required String contenido,
     bool esCompartida = false,
   }) async {
+    print("TITULO: $titulo");
+    print("CONTENIDO: $contenido");
+    print("ES_COMPARTIDA: $esCompartida");
     final response = await DioClient.dio.put('/notas/$id', data: {
+      'titulo': titulo,
       'contenido': contenido,
       'es_compartida': esCompartida,
     });

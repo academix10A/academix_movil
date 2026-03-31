@@ -18,7 +18,7 @@ import 'features/exam/presentation/viewmodel/exams_viewmodel.dart';
 import 'features/auth/presentation/view/register_screen.dart';
 import 'features/auth/presentation/view/forgot_password_screen.dart';
 import 'features/auth/presentation/view/splash_screen.dart';
-import 'features/library/presentation/view/favorites_screen.dart';
+import 'features/profile/presentation/view/favorites_screen.dart';
 import 'features/home/presentation/view/offline_content_screen.dart';
 import 'features/library/presentation/view/search_screen.dart';
 import 'features/library/presentation/view/ai_chat_screen.dart';

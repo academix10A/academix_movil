@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:academix/core/constants/app_spacing.dart';
-import 'package:academix/core/constants/app_radius.dart';
 import 'package:academix/core/themes/app_text_styles.dart';
 import 'package:academix/core/themes/app_colors.dart';
-import '../viewmodel/favorites_viewmodel.dart';
+import 'package:academix/features/library/presentation/viewmodel/library_viewmodel.dart';
+import 'package:academix/features/profile/presentation/viewmodel/favorites_viewmodel.dart';
+import 'package:academix/features/library/presentation/widgets/library_resource_card.dart';
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
@@ -13,7 +14,8 @@ class FavoritesScreen extends StatefulWidget {
 }
 
 class _FavoritesScreenState extends State<FavoritesScreen> {
-  final FavoritesViewModel vm = FavoritesViewModel();
+  final LibraryFavoritesViewModel vm = LibraryFavoritesViewModel();
+  final LibraryViewModel lvm = LibraryViewModel();
 
   @override
   void initState() {
@@ -41,12 +43,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         ),
       ),
       body: ValueListenableBuilder(
-        valueListenable: vm.favorites,
-        builder: (context, favorites, _) {
+        valueListenable: vm.favoritesResources,
+        builder: (context, resources, _) {
           if (vm.isLoading) {
             return const Center(child: CircularProgressIndicator(color: AppColors.primary));
           }
-          if (favorites.isEmpty) {
+          if (resources.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -69,31 +71,18 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           }
           return ListView.separated(
             padding: const EdgeInsets.all(AppSpacing.lg),
-            itemCount: favorites.length,
+            itemCount: resources.length,
             separatorBuilder: (_,_) => const SizedBox(height: AppSpacing.md),
             itemBuilder: (context, index) {
-              final item = favorites[index];
-              GestureDetector(
-                onTap: () => vm.onItemTap(context, item),
-                child: Container(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: AppColors.backgroundCard,
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                  ),
-                  child: ListTile(
-                    leading: Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(AppRadius.sm),
-                      ),
-                      child: Icon(Icons.favorite, color: AppColors.accent),
-                    ),
-                    title: Text(item.title, style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600)),
-                    subtitle: Text(item.tema + ' • ' + item.preview, style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted)),
-                    trailing: Icon(Icons.arrow_forward_ios, color: AppColors.textMuted, size: 16),
+              final resource = resources[index];
+              return Hero(
+                tag: 'book-${resource.id}',
+                child: Material(
+                  color: Colors.transparent,
+                  child: LibraryResourceCard(
+                    resource: resource,
+                    viewModel: lvm,
+                    onTap: () => vm.onItemTap(context, resource),
                   ),
                 ),
               );
@@ -104,4 +93,3 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     );
   }
 }
-

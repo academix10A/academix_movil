@@ -8,11 +8,13 @@ import 'package:academix/features/library/presentation/viewmodel/library_viewmod
 class LibraryResourceCard extends StatelessWidget {
   final LibraryResource resource;
   final VoidCallback onTap;
+  final LibraryViewModel viewModel;
 
   const LibraryResourceCard({
     super.key,
     required this.resource,
     required this.onTap,
+    required this.viewModel,
   });
 
   @override
@@ -173,20 +175,32 @@ class LibraryResourceCard extends StatelessWidget {
                           ),
 
                           // Favorite button
-                          GestureDetector(
-                            onTap: () {},
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: AppColors.background.withOpacity(0.5),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.favorite_border_rounded,
-                                color: AppColors.textMuted,
-                                size: 16,
-                              ),
-                            ),
+                          ValueListenableBuilder<Set<String>>(
+                            valueListenable: viewModel.favoriteResourceIds,
+                            builder: (context, favorites, _) {
+                              final isFavorite = favorites.contains(resource.id);
+                              return GestureDetector(
+                                onTap: () => viewModel.toggleFavorite(resource.id),
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: isFavorite 
+                                      ? AppColors.accent.withOpacity(0.1)
+                                      : AppColors.background.withOpacity(0.5),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    isFavorite 
+                                      ? Icons.favorite_rounded 
+                                      : Icons.favorite_border_rounded,
+                                    color: isFavorite 
+                                      ? AppColors.accent 
+                                      : AppColors.textMuted,
+                                    size: 16,
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ],
                       ),

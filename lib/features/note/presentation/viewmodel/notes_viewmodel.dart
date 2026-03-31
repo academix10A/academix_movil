@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:academix/core/routes/app_routes.dart';
 import 'package:academix/features/note/domain/entities/note_entity.dart';
-import 'package:academix/features/library/domain/entities/library_entity.dart';
 import 'package:academix/features/note/data/datasources/note_remote_datasource.dart';
 import 'package:academix/features/library/presentation/viewmodel/library_viewmodel.dart';
 
@@ -24,6 +23,7 @@ enum NoteFilter {
 
 class NoteItem {
   final String id;
+  final int? idNota;
   final String title;
   final String content;
   final String preview;
@@ -34,6 +34,7 @@ class NoteItem {
 
   const NoteItem({
     required this.id,
+    this.idNota,
     required this.title,
     required this.content,
     required this.preview,
@@ -49,6 +50,7 @@ class NoteItem {
   factory NoteItem.fromEntity(NoteEntity entity) {
     return NoteItem(
       id: entity.idNota.toString(),
+      idNota: entity.idNota,
       title: entity.title,
       content: entity.contenido,
       preview: entity.preview,
@@ -97,12 +99,13 @@ class NotesViewModel {
     }
   }
 
-  Future<void> createNote(String contenido, {int? idRecurso, bool esCompartida = false}) async {
+  Future<void> createNote(String titulo, String contenido, {int? idRecurso, bool esCompartida = false}) async {
     isLoading.value = true;
     errorMessage.value = null;
     
     try {
       await _remoteDataSource.createNote(
+        titulo: titulo,
         contenido: contenido,
         idRecurso: idRecurso,
         esCompartida: esCompartida,
@@ -110,6 +113,25 @@ class NotesViewModel {
       await loadNotes();
     } catch (e) {
       errorMessage.value = 'Error al crear nota: $e';
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> updateNote(int id, String titulo, String contenido, {bool esCompartida = false}) async {
+    isLoading.value = true;
+    errorMessage.value = null;
+    
+    try {
+      await _remoteDataSource.updateNote(
+        id: id,
+        titulo: titulo,
+        contenido: contenido,
+        esCompartida: esCompartida,
+      );
+      await loadNotes();
+    } catch (e) {
+      errorMessage.value = 'Error al actualizar nota: $e';
     } finally {
       isLoading.value = false;
     }
@@ -163,11 +185,6 @@ class NotesViewModel {
       AppRoutes.noteDetail,
       arguments: note,
     );
-  }
-
-  void onCreateNote() {
-    // TODO: Navegar a crear nueva nota
-    debugPrint('Create new note');
   }
 
   void dispose() {

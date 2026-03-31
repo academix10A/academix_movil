@@ -68,8 +68,9 @@ class CreateNoteViewModel extends ChangeNotifier {
 
     try {
       final notesVm = NotesViewModel();
-      final contenido = '${titleController.text}\n\n${contentController.text}';
-      await notesVm.createNote(contenido, idRecurso: selectedResourceId, esCompartida: isPublic);
+      final contenido = contentController.text;
+      final titulo = titleController.text;
+      await notesVm.createNote(titulo, contenido, idRecurso: selectedResourceId, esCompartida: isPublic);
       // Clear form
       titleController.clear();
       contentController.clear();

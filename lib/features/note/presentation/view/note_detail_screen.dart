@@ -19,10 +19,12 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
   late TextEditingController _titleController;
   late TextEditingController _contentController;
   bool _isEditing = false;
+  late final NotesViewModel vm;
 
   @override
   void initState() {
     super.initState();
+    vm = NotesViewModel();
     _titleController = TextEditingController(text: widget.note.title);
     _contentController = TextEditingController(text: widget.note.content);
   }
@@ -31,6 +33,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
   void dispose() {
     _titleController.dispose();
     _contentController.dispose();
+    // vm.dispose() called by list screen or gc
     super.dispose();
   }
 
@@ -104,13 +107,19 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                   const SizedBox(width: AppSpacing.sm),
                   // Botón editar/guardar
                   GestureDetector(
-                    onTap: () {
+                    onTap: () async {
                       setState(() {
                         _isEditing = !_isEditing;
                       });
                       if (!_isEditing) {
-                        // Guardar cambios (aquí llamarías al ViewModel)
-                        debugPrint('Guardando nota: ${_titleController.text}');
+                        // Guardar cambios
+                        await vm.updateNote(
+                          widget.note.idNota!,
+                          _titleController.text,
+                          _contentController.text,
+                          esCompartida: widget.note.isShared,
+                        );
+                        AppNavigator.pop(context);
                       }
                     },
                     child: Container(
@@ -370,8 +379,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                             ? "Dejar de compartir"
                             : "Compartir nota",
                         onTap: () {
-                          // Lógica para compartir
-                          debugPrint('Toggle share');
+                          // TODO: Implementar toggle share
                         },
                       ),
 
@@ -424,9 +432,10 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
             ),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              AppNavigator.pop(context);
+            onPressed: () async {
+              Navigator.pop(context); // Close dialog
+              await vm.deleteNote(widget.note.idNota!);
+              AppNavigator.pop(context); // Back to list
             },
             child: Text(
               "Eliminar",
