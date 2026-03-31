@@ -293,6 +293,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                             resource: resources[index],
                             onTap: () =>
                                 vm.onResourceTap(context, resources[index]),
+                            viewModel: vm,
                           ),
                         ),
                       );

@@ -25,6 +25,22 @@ class BookDetailViewModel {
     }
   }
 
+  Future<void> addFavorite(int idUsuario, int idRecurso) async {
+    try {
+      await _remoteDataSource.postFavorite(idUsuario, idRecurso);
+    } catch (e) {
+      // Handle error (snackbar in UI)
+    }
+  }
+
+  Future<void> deleteFavorite(int idUsuario, int idRecurso) async {
+    try {
+      await _remoteDataSource.deleteFavorite(idUsuario, idRecurso);
+    } catch (e) {
+      // Handle error (snackbar in UI)
+    }
+  }
+
   void dispose() {
     resource.dispose();
     isLoading.dispose();

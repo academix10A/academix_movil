@@ -3,6 +3,7 @@ import 'package:academix/core/routes/app_routes.dart';
 import 'package:academix/core/storage/session_manager.dart';
 import 'package:academix/features/profile/data/datasources/profile_remote_datasource.dart';
 import 'package:academix/features/profile/domain/entities/profile_entity.dart';
+import 'package:academix/features/profile/domain/entities/membresia_entity.dart';
 
 class ProfileViewModel extends ChangeNotifier {
   final ProfileRemoteDataSource _dataSource = ProfileRemoteDataSource();
@@ -61,7 +62,7 @@ class ProfileViewModel extends ChangeNotifier {
       
       // TODO: Check membership status when endpoint is available
       // For now, set as non-premium (can be updated later)
-      _isPremium = false;
+      _isPremium = _user?.isPremium ?? false;
       
     } catch (e) {
       _error = 'Error al cargar los datos del perfil';
@@ -72,12 +73,22 @@ class ProfileViewModel extends ChangeNotifier {
     }
   }
 
+  Future<void> refreshProfile() async {
+    await loadProfileData();
+  }
+
   void onSettings() {
     debugPrint('Navigate to settings');
   }
 
-  void onUpgradePremium() {
-    debugPrint('Navigate to upgrade premium');
+  Future<void> purchaseMembresia(Membresia plan) async {
+    try {
+      await _dataSource.activarMembresia(plan.id);
+      await refreshProfile();
+    } catch (e) {
+      debugPrint('Error purchasing: $e');
+      rethrow;
+    }
   }
 
   Future<void> onLogout(BuildContext context) async {

@@ -18,8 +18,9 @@ class NoteRepositoryImpl implements NoteRepository {
   }
 
   @override
-  Future<NoteEntity> createNote(String contenido, int? idRecurso, bool esCompartida) {
+  Future<NoteEntity> createNote(String titulo, String contenido, int? idRecurso, bool esCompartida) {
     return remote.createNote(
+      titulo: titulo,
       contenido: contenido,
       idRecurso: idRecurso,
       esCompartida: esCompartida,
@@ -27,9 +28,10 @@ class NoteRepositoryImpl implements NoteRepository {
   }
 
   @override
-  Future<NoteEntity> updateNote(int id, String contenido, bool esCompartida) {
+  Future<NoteEntity> updateNote(int id, String titulo, String contenido, bool esCompartida) {
     return remote.updateNote(
       id: id,
+      titulo: titulo,
       contenido: contenido,
       esCompartida: esCompartida,
     );

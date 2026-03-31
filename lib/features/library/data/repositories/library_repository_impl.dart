@@ -17,9 +17,14 @@ class LibraryRepositoryImpl implements LibraryRepository {
     return remote.getResourceById(id);
   }
 
-  @override
+@override
   Future<List<LibraryResourceEntity>> searchResources(String query) {
     return remote.searchResources(query);
+  }
+
+  @override
+  Future<List<LibraryResourceEntity>> getFavorites(int idUsuario) {
+    return remote.getFavorites(idUsuario);
   }
 }
 

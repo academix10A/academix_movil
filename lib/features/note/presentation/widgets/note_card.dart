@@ -15,6 +15,12 @@ class NoteCard extends StatelessWidget {
     required this.onTap,
   });
 
+  String truncate(String text, int maxLength) {
+    return text.length > maxLength
+        ? '${text.substring(0, maxLength)}...'
+        : text;
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -92,7 +98,7 @@ class NoteCard extends StatelessWidget {
                 // Resource indicator
                 if (note.hasResource)
                   _TagChip(
-                    label: '${note.resource!.title.substring(0, 15)}${note.resource!.title.length > 15 ? '...' : ''}',
+                    label: truncate(note.resource?.title ?? '', 15),
                     color: AppColors.accent.withOpacity(0.1),
                     textColor: AppColors.accent,
                     borderColor: AppColors.accent,

@@ -17,6 +17,18 @@ class LibraryRemoteDataSource {
     return LibraryResourceEntity.fromJson(response.data);
   }
 
+  Future<LibraryResourceEntity> postFavorite(int idUsuario, int idRecurso) async {
+    final response = await DioClient.dio.post('/recurso/$idUsuario/$idRecurso');
+
+    return LibraryResourceEntity.fromJson(response.data);
+  }
+
+  Future<LibraryResourceEntity> deleteFavorite(int idUsuario, int idRecurso) async {
+    final response = await DioClient.dio.delete('/recurso/$idUsuario/$idRecurso');
+
+    return LibraryResourceEntity.fromJson(response.data);
+  }
+
   Future<List<TemaResourceEntity>> getResourcesFromTemas() async {
     final response = await DioClient.dio.get('/recurso/temas-con-recursos');
 
@@ -70,6 +82,14 @@ class LibraryRemoteDataSource {
           (r.descripcion?.toLowerCase().contains(lowerQuery) ?? false) ||
           (r.contenido?.toLowerCase().contains(lowerQuery) ?? false);
     }).toList();
+  }
+
+  Future<List<LibraryResourceEntity>> getFavorites(int idUsuario) async {
+    final response = await DioClient.dio.get('/recurso/favoritos/$idUsuario');
+
+    final List data = response.data;
+
+    return data.map((e) => LibraryResourceEntity.fromJson(e)).toList();
   }
 }
 

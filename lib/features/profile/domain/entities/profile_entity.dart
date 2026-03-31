@@ -10,6 +10,7 @@ class UserProfileEntity {
   final int rol;
   final bool estaActivo;
   final String? nombreRol;
+  final int? idMembresia;
 
   UserProfileEntity({
     required this.idUsuario,
@@ -23,6 +24,7 @@ class UserProfileEntity {
     required this.rol,
     required this.estaActivo,
     this.nombreRol,
+    this.idMembresia,
   });
 
   factory UserProfileEntity.fromJson(Map<String, dynamic> json) {
@@ -42,6 +44,7 @@ class UserProfileEntity {
       rol: json['rol'] ?? 1,
       estaActivo: json['esta_activo'] ?? true,
       nombreRol: json['nombre_rol'],
+      idMembresia: json['id_membresia'],
     );
   }
 
@@ -71,6 +74,8 @@ class UserProfileEntity {
   bool get isActive => estaActivo;
 
   String get roleName => nombreRol ?? (rol == 1 ? 'Estudiante' : 'Usuario');
+
+  bool get isPremium => idMembresia != null && idMembresia != 1; // 1 = Freemium
 
   String get memberSince {
     final now = DateTime.now();

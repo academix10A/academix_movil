@@ -21,5 +21,14 @@ class Env {
     }
     return value;
   }
+
+  static String get paypalClientId {
+    final value = dotenv.env['PAYPAL_CLIENT_ID'];
+    if (value == null) {
+      throw Exception('PAYPAL_CLIENT_ID no está definida en .env');
+    }
+    return value;
+  }
+
 }
 

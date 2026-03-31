@@ -80,5 +80,32 @@ class ProfileRemoteDataSource {
     }
     return 0;
   }
+
+  /// Activate membership (free or post-payment)
+  Future<void> activarMembresia(int idMembresia) async {
+    final user = await getCurrentUser();
+    await DioClient.dio.post('/usuarios/membresia', data: {
+      'id_usuario': user.idUsuario,
+      'id_membresia': idMembresia,
+    });
+  }
+
+  /// Create PayPal order via backend proxy, return orderID for JS SDK
+  Future<Map<String, dynamic>> createPaypalOrder(int idMembresia) async {
+    final response = await DioClient.dio.post('/paypal/create-order', data: {
+      'id_membresia': idMembresia,
+    });
+
+    return response.data;
+  }
+
+  /// Capture PayPal order via backend proxy
+  Future<void> capturePaypalOrder(String orderId, int idMembresia) async {
+    await DioClient.dio.post('/paypal/capture/$orderId', data: {
+      'id_membresia': idMembresia,
+    });
+  }
 }
+
+
 
