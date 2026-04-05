@@ -16,8 +16,7 @@ class ExamCompletedCard extends StatelessWidget {
   });
 
   Color get _scoreColor {
-    if (exam.score >= 90) return AppColors.success;
-    if (exam.score >= 70) return AppColors.primary;
+    if (exam.grade == 'APROBADO' || exam.grade == 'EXCELENTE') return AppColors.success;
     return AppColors.error;
   }
 
@@ -26,10 +25,7 @@ class ExamCompletedCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg,
-          vertical: AppSpacing.md,
-        ),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
           color: AppColors.backgroundCard,
           borderRadius: BorderRadius.circular(AppRadius.md),
@@ -37,7 +33,35 @@ class ExamCompletedCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Info lado izquierdo
+            // Indicador de score circular pequeño
+            SizedBox(
+              width: 52,
+              height: 52,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    value: exam.score / 100,
+                    strokeWidth: 4,
+                    backgroundColor: AppColors.border.withOpacity(0.3),
+                    valueColor: AlwaysStoppedAnimation<Color>(_scoreColor),
+                    strokeCap: StrokeCap.round,
+                  ),
+                  Text(
+                    '${exam.score}',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: _scoreColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(width: AppSpacing.md),
+
+            // Info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -48,13 +72,33 @@ class ExamCompletedCard extends StatelessWidget {
                       color: AppColors.text,
                       fontWeight: FontWeight.w600,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    '${exam.questions} preguntas – ${exam.timeAgo}',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textMuted,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        '${exam.questions} preguntas',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.textMuted,
+                          fontSize: 12,
+                        ),
+                      ),
+                      Text(
+                        ' · ',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                      Text(
+                        exam.timeAgo,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.textMuted,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -62,27 +106,30 @@ class ExamCompletedCard extends StatelessWidget {
 
             const SizedBox(width: AppSpacing.md),
 
-            // Score lado derecho
+            // Grade badge y flecha
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
-                  '${exam.score}%',
-                  style: AppTextStyles.h2.copyWith(
-                    color: _scoreColor,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: _scoreColor.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(AppRadius.full),
+                  ),
+                  child: Text(
+                    exam.grade,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: _scoreColor,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 10,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ),
-                Text(
-                  exam.grade,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: _scoreColor,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 11,
-                    letterSpacing: 0.5,
-                  ),
-                ),
+                const SizedBox(height: 6),
+                Icon(Icons.chevron_right_rounded,
+                    color: AppColors.textMuted, size: 18),
               ],
             ),
           ],

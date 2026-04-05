@@ -74,12 +74,9 @@ class MyApp extends StatelessWidget {
             );
           case AppRoutes.examResult:
             final args = settings.arguments as Map<String, dynamic>;
-            final exam = args["exam"] as ExamItem?;
-            final completedExam = args["completedExam"] as CompletedExamItem?;
             return MaterialPageRoute(
               builder: (_) => ExamResultScreen(
-                exam: exam,
-                completedExam: completedExam,
+                exam: args["exam"] as ExamItem?,
                 score: args["score"] as int,
                 grade: args["grade"] as String,
                 correctAnswers: args["correctAnswers"] as int,
@@ -105,4 +102,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-

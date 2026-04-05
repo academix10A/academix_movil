@@ -31,8 +31,9 @@ class QuestionEntity {
       idPregunta: json['id_pregunta'] ?? 0,
       contenido: json['contenido'] ?? '',
       opciones: (json['opciones'] as List<dynamic>?)
-          ?.map((e) => OptionEntity.fromJson(e as Map<String, dynamic>))
-          .toList() ?? [],
+              ?.map((e) => OptionEntity.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
   }
 }
@@ -49,7 +50,8 @@ class ExamEntity {
   final bool estaActivo;
   final int idUsuarioCreador;
   final String? nombreCreador;
-  final List<QuestionEntity>? preguntas; // New for completo
+  final String? nombreSubtema; // Para filtros por subtema
+  final List<QuestionEntity>? preguntas;
 
   ExamEntity({
     required this.idExamen,
@@ -63,10 +65,19 @@ class ExamEntity {
     required this.estaActivo,
     required this.idUsuarioCreador,
     this.nombreCreador,
+    this.nombreSubtema,
     this.preguntas,
   });
 
   factory ExamEntity.fromJson(Map<String, dynamic> json) {
+    // El backend devuelve subtema anidado o nombre plano
+    String? subtemaName;
+    if (json['subtema'] is Map) {
+      subtemaName = json['subtema']['nombre'];
+    } else {
+      subtemaName = json['nombre_subtema'];
+    }
+
     return ExamEntity(
       idExamen: json['id_examen'] ?? 0,
       titulo: json['titulo'] ?? '',
@@ -83,7 +94,8 @@ class ExamEntity {
       estaActivo: json['esta_activo'] ?? true,
       idUsuarioCreador: json['id_usuario_creador'] ?? 0,
       nombreCreador: json['nombre_creador'],
-      preguntas: null, // Not in basic /examen/
+      nombreSubtema: subtemaName,
+      preguntas: null,
     );
   }
 
@@ -92,21 +104,21 @@ class ExamEntity {
       idExamen: json['id_examen'] ?? 0,
       titulo: json['titulo'] ?? '',
       descripcion: json['descripcion'] ?? '',
-      duracionMinutos: 30, // Default, not in completo
+      duracionMinutos: 30,
       cantidadPreguntas: json['cantidad_preguntas'] ?? 0,
-      calificacionMinima: 7.0, // Default 70%
+      calificacionMinima: 7.0,
       fechaCreacion: DateTime.now(),
       fechaLimite: null,
       estaActivo: true,
       idUsuarioCreador: 0,
       nombreCreador: '',
+      nombreSubtema: null,
       preguntas: (json['preguntas'] as List<dynamic>?)
           ?.map((p) => QuestionEntity.fromJson(p as Map<String, dynamic>))
           .toList(),
     );
   }
 
-  // Mapper para compatibilidad con la UI existente
   String get difficulty {
     if (cantidadPreguntas <= 5) return 'Fácil';
     if (cantidadPreguntas <= 10) return 'Medio';
@@ -137,7 +149,7 @@ class CompletedExamEntity {
   final int cantidadPreguntas;
   final bool aprobo;
   final String? tituloExamen;
-  final double? porcentaje; // New for submit response
+  final double? porcentaje;
 
   CompletedExamEntity({
     required this.idIntento,
@@ -174,11 +186,12 @@ class CompletedExamEntity {
   }
 
   factory CompletedExamEntity.fromSubmitJson(Map<String, dynamic> json) {
-    final scorePorcentaje = json['porcentaje'] ?? ((json['calificacion'] ?? 0) * 10);
+    final scorePorcentaje =
+        (json['porcentaje'] ?? ((json['calificacion'] ?? 0) * 10)).toDouble();
     return CompletedExamEntity(
       idIntento: json['id_intento'] ?? 0,
       idExamen: json['id_examen'] ?? 0,
-      idUsuario: 0, // Filled post-submit
+      idUsuario: 0,
       calificacion: scorePorcentaje,
       fechaInicio: DateTime.now(),
       fechaFin: DateTime.now(),
@@ -190,27 +203,74 @@ class CompletedExamEntity {
     );
   }
 
-  // Mapper para compatibilidad con la UI existente
   String get grade => '${calificacion.toStringAsFixed(0)}%';
 
   String get dateCompleted {
     final now = DateTime.now();
     final difference = now.difference(fechaFin);
-
-    if (difference.inDays > 30) {
-      return 'Hace más de un mes';
-    } else if (difference.inDays > 0) {
-      return 'Hace ${difference.inDays} días';
-    } else if (difference.inHours > 0) {
-      return 'Hace ${difference.inHours} horas';
-    } else {
-      return 'Hoy';
-    }
+    if (difference.inDays > 30) return 'Hace más de un mes';
+    if (difference.inDays > 0) return 'Hace ${difference.inDays} días';
+    if (difference.inHours > 0) return 'Hace ${difference.inHours} horas';
+    return 'Hoy';
   }
 
-  String get examTitle => tituloExamen ?? 'Examen #${idExamen}';
+  String get examTitle => tituloExamen ?? 'Examen #$idExamen';
 
   int get correctAnswers => respuestasCorrectas;
   int get incorrectAnswers => cantidadPreguntas - respuestasCorrectas;
 }
 
+// Modelo para múltiples intentos (premium)
+class ExamIntentoEntity {
+  final int numeroIntento;
+  final int idIntento;
+  final double calificacion;
+  final DateTime fecha;
+
+  ExamIntentoEntity({
+    required this.numeroIntento,
+    required this.idIntento,
+    required this.calificacion,
+    required this.fecha,
+  });
+
+  factory ExamIntentoEntity.fromJson(Map<String, dynamic> json) {
+    return ExamIntentoEntity(
+      numeroIntento: json['numero_intento'] ?? 0,
+      idIntento: json['id_intento'] ?? 0,
+      calificacion: (json['calificacion'] ?? 0).toDouble(),
+      fecha: json['fecha'] != null
+          ? DateTime.parse(json['fecha'])
+          : DateTime.now(),
+    );
+  }
+
+  double get porcentaje => calificacion * 10;
+  bool get aprobo => porcentaje >= 70;
+}
+
+class ExamMisIntentosEntity {
+  final int idExamen;
+  final String tituloExamen;
+  final int totalIntentos;
+  final List<ExamIntentoEntity> intentos;
+
+  ExamMisIntentosEntity({
+    required this.idExamen,
+    required this.tituloExamen,
+    required this.totalIntentos,
+    required this.intentos,
+  });
+
+  factory ExamMisIntentosEntity.fromJson(Map<String, dynamic> json) {
+    return ExamMisIntentosEntity(
+      idExamen: json['id_examen'] ?? 0,
+      tituloExamen: json['titulo_examen'] ?? '',
+      totalIntentos: json['total_intentos'] ?? 0,
+      intentos: (json['intentos'] as List<dynamic>?)
+              ?.map((i) => ExamIntentoEntity.fromJson(i as Map<String, dynamic>))
+              .toList() ??
+          [],
+    );
+  }
+}

@@ -10,8 +10,10 @@ class LibraryResource {
   final String category;
   final String description;
   final int durationMinutes;
-final int pages;
+  final int pages;
   final bool isFavorite;
+  final String? urlArchivo;
+  final int? idTipo;
 
   const LibraryResource({
     required this.id,
@@ -21,11 +23,11 @@ final int pages;
     required this.durationMinutes,
     required this.pages,
     this.isFavorite = false,
+    this.urlArchivo,
+    this.idTipo,
   });
 
-
-
-  // Mapper desde entity
+  // Mapper desde LibraryResourceEntity
   factory LibraryResource.fromEntity(LibraryResourceEntity entity) {
     return LibraryResource(
       id: entity.idRecurso.toString(),
@@ -35,23 +37,60 @@ final int pages;
       durationMinutes: entity.durationMinutes,
       pages: entity.pages,
       isFavorite: false,
+      urlArchivo: entity.urlArchivo,
+      idTipo: entity.idTipo,
+    );
+  }
+
+  LibraryResource copyWith({
+    String? id,
+    String? title,
+    String? category,
+    String? description,
+    int? durationMinutes,
+    int? pages,
+    bool? isFavorite,
+    String? urlArchivo,
+    int? idTipo,
+  }) {
+    return LibraryResource(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      category: category ?? this.category,
+      description: description ?? this.description,
+      durationMinutes: durationMinutes ?? this.durationMinutes,
+      pages: pages ?? this.pages,
+      isFavorite: isFavorite ?? this.isFavorite,
+      urlArchivo: urlArchivo ?? this.urlArchivo,
+      idTipo: idTipo ?? this.idTipo,
     );
   }
 }
 
 class LibraryViewModel {
-
   final TextEditingController searchController = TextEditingController();
-  final ValueNotifier<String> selectedCategory = ValueNotifier<String>('Todos');
+  final ValueNotifier<String> selectedCategory =
+      ValueNotifier<String>('Todos');
   final ValueNotifier<List<LibraryResource>> filteredResources =
       ValueNotifier<List<LibraryResource>>([]);
-
   final ValueNotifier<bool> isLoading = ValueNotifier<bool>(false);
-final ValueNotifier<String?> errorMessage = ValueNotifier<String?>(null);
+  final ValueNotifier<String?> errorMessage = ValueNotifier<String?>(null);
   final ValueNotifier<bool> isSearchFocused = ValueNotifier<bool>(false);
+  final ValueNotifier<Set<String>> favoriteResourceIds =
+      ValueNotifier<Set<String>>({});
 
-  final ValueNotifier<Set<String>> favoriteResourceIds = ValueNotifier<Set<String>>( {});
   int? idUsuario;
+
+  final ValueNotifier<List<String>> categories =
+      ValueNotifier<List<String>>(['Todos']);
+
+  final LibraryRemoteDataSource _remoteDataSource = LibraryRemoteDataSource();
+  List<LibraryResource> _allResources = [];
+
+  LibraryViewModel() {
+    selectedCategory.addListener(_applyFilters);
+    _loadUserId().then((_) => loadResources());
+  }
 
   Future<void> _loadUserId() async {
     try {
@@ -59,19 +98,8 @@ final ValueNotifier<String?> errorMessage = ValueNotifier<String?>(null);
       idUsuario = userResponse.data['id_usuario'];
     } catch (e) {
       debugPrint('Error loading user ID: $e');
-      idUsuario = 1; // fallback
+      idUsuario = 1;
     }
-  }
-
-  final ValueNotifier<List<String>> categories =
-    ValueNotifier<List<String>>(['Todos']);
-  
-  final LibraryRemoteDataSource _remoteDataSource = LibraryRemoteDataSource();
-  List<LibraryResource> _allResources = [];
-
-  LibraryViewModel() {
-    selectedCategory.addListener(_applyFilters);
-    _loadUserId().then((_) => loadResources());
   }
 
   Future<void> loadFavorites() async {
@@ -104,18 +132,15 @@ final ValueNotifier<String?> errorMessage = ValueNotifier<String?>(null);
           durationMinutes: 30,
           pages: 10,
           isFavorite: false,
+          urlArchivo: e.urlArchivo,  // ahora disponible
+          idTipo: e.idTipo,          // ahora disponible
         );
       }).toList();
 
-      final uniqueCategories = entities
-        .map((e) => e.tema)
-        .toSet()
-        .toList();
-
+      final uniqueCategories = entities.map((e) => e.tema).toSet().toList();
       categories.value = ['Todos', ...uniqueCategories];
 
       await loadFavorites();
-
       _applyFilters();
     } catch (e) {
       errorMessage.value = 'Error al cargar recursos: $e';
@@ -127,7 +152,6 @@ final ValueNotifier<String?> errorMessage = ValueNotifier<String?>(null);
 
   void _applyFilters() {
     final category = selectedCategory.value;
-
     filteredResources.value = _allResources.where((r) {
       return category == 'Todos' || r.category == category;
     }).toList();
@@ -147,12 +171,13 @@ final ValueNotifier<String?> errorMessage = ValueNotifier<String?>(null);
       final isCurrentlyFavorite = currentFavorites.contains(idRecurso);
 
       if (isCurrentlyFavorite) {
-        await _remoteDataSource.deleteFavorite(idUsuario!, int.parse(idRecurso));
+        await _remoteDataSource.deleteFavorite(
+            idUsuario!, int.parse(idRecurso));
       } else {
-        await _remoteDataSource.postFavorite(idUsuario!, int.parse(idRecurso));
+        await _remoteDataSource.postFavorite(
+            idUsuario!, int.parse(idRecurso));
       }
 
-      // Update local state
       final updated = Set<String>.from(currentFavorites);
       if (isCurrentlyFavorite) {
         updated.remove(idRecurso);
@@ -161,7 +186,6 @@ final ValueNotifier<String?> errorMessage = ValueNotifier<String?>(null);
       }
       favoriteResourceIds.value = updated;
 
-      // Update _allResources isFavorite and refresh
       _updateResourceFavorites();
       _applyFilters();
     } catch (e) {
@@ -171,17 +195,8 @@ final ValueNotifier<String?> errorMessage = ValueNotifier<String?>(null);
 
   void _updateResourceFavorites() {
     final ids = favoriteResourceIds.value;
-    _allResources = _allResources.map((r) {
-      return LibraryResource(
-        id: r.id,
-        title: r.title,
-        category: r.category,
-        description: r.description,
-        durationMinutes: r.durationMinutes,
-        pages: r.pages,
-        isFavorite: ids.contains(r.id),
-      );
-    }).toList();
+    _allResources =
+        _allResources.map((r) => r.copyWith(isFavorite: ids.contains(r.id))).toList();
   }
 
   void onResourceTap(BuildContext context, LibraryResource resource) {

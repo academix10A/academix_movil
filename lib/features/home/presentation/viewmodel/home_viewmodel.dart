@@ -63,6 +63,23 @@ class HomeViewModel {
     );
   }
 
+  void onReadResourceTap(BuildContext context, Map<String, dynamic> item) {
+    final resource = LibraryResource(
+      id: item['id_recurso'].toString(),
+      title: item['titulo'] ?? '',
+      category: item['categoria'] ?? '',
+      description: item['descripcion'] ?? '',
+      durationMinutes: 0,
+      pages: 0,
+    );
+
+    AppNavigator.push(
+      context,
+      AppRoutes.bookDetail,
+      arguments: resource,
+    );
+  }
+
   void dispose() {
     searchController.dispose();
     userName.dispose();

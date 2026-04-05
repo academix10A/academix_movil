@@ -18,6 +18,8 @@ class TemaResourceEntity {
   final String descripcion;
   final String tema;
   final String subtema;
+  final String? urlArchivo;
+  final int? idTipo;
 
   TemaResourceEntity({
     required this.id,
@@ -25,5 +27,7 @@ class TemaResourceEntity {
     required this.descripcion,
     required this.tema,
     required this.subtema,
+    this.urlArchivo,
+    this.idTipo,
   });
 }
