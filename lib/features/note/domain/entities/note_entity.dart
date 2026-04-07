@@ -1,4 +1,5 @@
-import '../../../library/domain/entities/library_entity.dart';
+import '../../../library/domain/entities/library_resource_entity.dart';
+import '../../../library/data/models/library_resource_model.dart';
 
 class NoteEntity {
   final int idNota;
@@ -37,7 +38,9 @@ class NoteEntity {
       esCompartida: json['es_compartida'] ?? false,
       idUsuario: json['id_usuario'] ?? 0,
       idRecurso: json['id_recurso'],
-      recurso: json['recurso'] != null ? LibraryResourceEntity.fromJson(json['recurso']) : null,
+      recurso: json['recurso'] != null
+        ? LibraryResourceModel.fromJson(json['recurso']).toEntity()
+        : null,
     );
   }
 

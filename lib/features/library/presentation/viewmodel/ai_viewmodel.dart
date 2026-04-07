@@ -1,66 +1,82 @@
 import 'package:flutter/material.dart';
-import '../../domain/entities/ai_message_entity.dart';
+import 'package:academix/features/library/domain/entities/ai_message_entity.dart';
 
-class AiViewModel extends ChangeNotifier {
+/// Contract for AI chat functionality.
+/// Implement a real version backed by an API and inject it via constructor.
+abstract class AiService {
+  Future<String> sendMessage({
+    required String message,
+    required String context,
+  });
+}
+
+class AiViewModel {
+  final AiService aiService;
+  final bool isPremiumUser;
+
+  AiViewModel({
+    required this.aiService,
+    required this.isPremiumUser,
+  }) {
+    isPremium.value = isPremiumUser;
+  }
+
   final TextEditingController messageController = TextEditingController();
   final ValueNotifier<List<AiMessageEntity>> messages = ValueNotifier([]);
   final ValueNotifier<bool> isPremium = ValueNotifier(false);
   final ValueNotifier<bool> isLoading = ValueNotifier(false);
   final ValueNotifier<String> contextText = ValueNotifier('');
 
-  AiViewModel() {
-    _loadHistory();
-    isPremium.value = false; // Cambiar el false
-  }
-
-  void _loadHistory() {
-    // Mock chat history
-    messages.value = [
-      AiMessageEntity(id: '1', message: 'Selecciona texto para explicación IA', isUser: false, timestamp: DateTime.now().subtract(const Duration(minutes: 5))),
-      AiMessageEntity(id: '2', message: 'Texto seleccionado: E=mc²', isUser: true, timestamp: DateTime.now().subtract(const Duration(minutes: 4))),
-    ];
-  }
-
   Future<void> sendMessage() async {
-    if (messageController.text.isEmpty || !isPremium.value) return;
+    final text = messageController.text.trim();
+    if (text.isEmpty || !isPremium.value) return;
+
     isLoading.value = true;
 
     final userMessage = AiMessageEntity(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      message: messageController.text,
+      message: text,
       isUser: true,
       timestamp: DateTime.now(),
     );
     messages.value = [...messages.value, userMessage];
     messageController.clear();
 
-    // Mock AI response
-    await Future.delayed(const Duration(seconds: 1));
-    final aiResponse = AiMessageEntity(
-      id: (DateTime.now().millisecondsSinceEpoch + 1).toString(),
-      message: 'Explicación IA sobre "${contextText.value}": Esta es una explicación generada por IA sobre el contenido seleccionado...',
-      isUser: false,
-      timestamp: DateTime.now(),
-    );
-    messages.value = [...messages.value, aiResponse];
+    try {
+      final reply = await aiService.sendMessage(
+        message: text,
+        context: contextText.value,
+      );
 
-    isLoading.value = false;
-    notifyListeners();
+      final aiResponse = AiMessageEntity(
+        id: (DateTime.now().millisecondsSinceEpoch + 1).toString(),
+        message: reply,
+        isUser: false,
+        timestamp: DateTime.now(),
+      );
+      messages.value = [...messages.value, aiResponse];
+    } catch (e) {
+      final errorMsg = AiMessageEntity(
+        id: (DateTime.now().millisecondsSinceEpoch + 2).toString(),
+        message: 'Error al obtener respuesta. Intenta de nuevo.',
+        isUser: false,
+        timestamp: DateTime.now(),
+      );
+      messages.value = [...messages.value, errorMsg];
+    } finally {
+      isLoading.value = false;
+    }
   }
-
-  bool get isPremiumUser => true; // Mock premium check
 
   void setContext(String text) {
     contextText.value = text;
   }
 
-  @override
   void dispose() {
     messageController.dispose();
     messages.dispose();
     isPremium.dispose();
     isLoading.dispose();
     contextText.dispose();
-    super.dispose();
   }
 }

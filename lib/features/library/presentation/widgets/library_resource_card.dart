@@ -3,6 +3,7 @@ import 'package:academix/core/constants/app_spacing.dart';
 import 'package:academix/core/constants/app_radius.dart';
 import 'package:academix/core/themes/app_text_styles.dart';
 import 'package:academix/core/themes/app_colors.dart';
+import 'package:academix/features/library/data/models/library_resource_ui_model.dart';
 import 'package:academix/features/library/presentation/viewmodel/library_viewmodel.dart';
 
 class LibraryResourceCard extends StatelessWidget {
@@ -59,7 +60,7 @@ class LibraryResourceCard extends StatelessWidget {
                       color: AppColors.primary.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.menu_book_rounded,
                       size: 30,
                       color: AppColors.primary,
@@ -87,7 +88,8 @@ class LibraryResourceCard extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: AppColors.primary.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(AppRadius.full),
+                          borderRadius:
+                              BorderRadius.circular(AppRadius.full),
                         ),
                         child: Text(
                           resource.category,
@@ -122,27 +124,27 @@ class LibraryResourceCard extends StatelessWidget {
                       // Stats row
                       Row(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.access_time_rounded,
                             size: 12,
                             color: AppColors.textMuted,
                           ),
                           const SizedBox(width: 3),
                           Text(
-                            "${resource.durationMinutes} min",
+                            '${resource.durationMinutes} min',
                             style: AppTextStyles.caption.copyWith(
                               color: AppColors.textMuted,
                             ),
                           ),
                           const SizedBox(width: AppSpacing.sm),
-                          Icon(
+                          const Icon(
                             Icons.description_outlined,
                             size: 12,
                             color: AppColors.textMuted,
                           ),
                           const SizedBox(width: 3),
                           Text(
-                            "${resource.pages} págs",
+                            '${resource.pages} págs',
                             style: AppTextStyles.caption.copyWith(
                               color: AppColors.textMuted,
                             ),
@@ -154,16 +156,22 @@ class LibraryResourceCard extends StatelessWidget {
 
                       // Rating + Favorite row
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment:
+                            MainAxisAlignment.spaceBetween,
                         children: [
                           // Stars
                           Row(
                             children: [
-                              ...List.generate(5, (i) => Icon(
-                                i < 4 ? Icons.star_rounded : Icons.star_border_rounded,
-                                color: AppColors.primary,
-                                size: 13,
-                              )),
+                              ...List.generate(
+                                5,
+                                (i) => Icon(
+                                  i < 4
+                                      ? Icons.star_rounded
+                                      : Icons.star_border_rounded,
+                                  color: AppColors.primary,
+                                  size: 13,
+                                ),
+                              ),
                               const SizedBox(width: 4),
                               Text(
                                 '4.5',
@@ -176,26 +184,31 @@ class LibraryResourceCard extends StatelessWidget {
 
                           // Favorite button
                           ValueListenableBuilder<Set<String>>(
-                            valueListenable: viewModel.favoriteResourceIds,
+                            valueListenable:
+                                viewModel.favoriteResourceIds,
                             builder: (context, favorites, _) {
-                              final isFavorite = favorites.contains(resource.id);
+                              final isFavorite =
+                                  favorites.contains(resource.id);
                               return GestureDetector(
-                                onTap: () => viewModel.toggleFavorite(resource.id),
+                                onTap: () => viewModel
+                                    .toggleFavorite(resource.id),
                                 child: Container(
                                   padding: const EdgeInsets.all(4),
                                   decoration: BoxDecoration(
-                                    color: isFavorite 
-                                      ? AppColors.accent.withOpacity(0.1)
-                                      : AppColors.background.withOpacity(0.5),
+                                    color: isFavorite
+                                        ? AppColors.accent
+                                            .withOpacity(0.1)
+                                        : AppColors.background
+                                            .withOpacity(0.5),
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(
-                                    isFavorite 
-                                      ? Icons.favorite_rounded 
-                                      : Icons.favorite_border_rounded,
-                                    color: isFavorite 
-                                      ? AppColors.accent 
-                                      : AppColors.textMuted,
+                                    isFavorite
+                                        ? Icons.favorite_rounded
+                                        : Icons.favorite_border_rounded,
+                                    color: isFavorite
+                                        ? AppColors.accent
+                                        : AppColors.textMuted,
                                     size: 16,
                                   ),
                                 ),

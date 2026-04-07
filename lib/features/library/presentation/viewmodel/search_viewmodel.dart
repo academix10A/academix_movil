@@ -10,7 +10,7 @@ class SearchResult {
   final String? usuario;
   final String imageUrl;
 
-  SearchResult({
+  const SearchResult({
     required this.id,
     required this.type,
     required this.title,
@@ -20,7 +20,8 @@ class SearchResult {
   });
 
   factory SearchResult.fromBackend(Map<String, dynamic> json) {
-    final String backendTipo = (json['tipo'] as String?)?.toLowerCase() ?? 'recurso';
+    final String backendTipo =
+        (json['tipo'] as String?)?.toLowerCase() ?? 'recurso';
 
     return SearchResult(
       id: json['id'].toString(),
@@ -30,42 +31,32 @@ class SearchResult {
         'tema' => 'tema',
         _ => 'resource',
       },
-      title: json['titulo'] ?? '',
-      preview: json['descripcion'] ?? '',
-      usuario: json['usuario'],
+      title: json['titulo'] as String? ?? '',
+      preview: json['descripcion'] as String? ?? '',
+      usuario: json['usuario'] as String?,
       imageUrl: 'assets/images/icon.png',
     );
   }
 }
 
 class SearchViewModel {
+  final SearchRemoteDataSource searchDataSource;
+
+  SearchViewModel({required this.searchDataSource});
+
   final searchResults = ValueNotifier<List<SearchResult>>([]);
   final isLoading = ValueNotifier<bool>(false);
   final errorMessage = ValueNotifier<String?>(null);
-  final TextEditingController searchController = TextEditingController();
+  final searchController = TextEditingController();
   final tabs = <String>['Todos', 'Recursos', 'Notas', 'Temas'];
+
   String selectedTab = 'Todos';
-  String currentQuery = '';
-  String selectedTipo = 'all';
+  String _selectedTipo = 'all';
   Timer? _debounceTimer;
-
-  SearchViewModel() {
-    _updateTipo();
-  }
-
-  void _updateTipo() {
-    selectedTipo = switch (selectedTab) {
-      'Todos' => 'all',
-      'Recursos' => 'recursos',
-      'Notas' => 'notas',
-      'Temas' => 'temas',
-      _ => 'all',
-    };
-  }
 
   void selectTab(String tab) {
     selectedTab = tab;
-    selectedTipo = switch (tab) {
+    _selectedTipo = switch (tab) {
       'Todos' => 'all',
       'Recursos' => 'recursos',
       'Notas' => 'notas',
@@ -76,8 +67,6 @@ class SearchViewModel {
   }
 
   Future<void> onSearch(String query) async {
-    currentQuery = query;
-
     _debounceTimer?.cancel();
     _debounceTimer = Timer(
       const Duration(milliseconds: 500),
@@ -91,18 +80,12 @@ class SearchViewModel {
     );
   }
 
-  void dispose() {
-    _debounceTimer?.cancel();
-    searchController.dispose();
-    searchResults.dispose();
-    isLoading.dispose();
-    errorMessage.dispose();
+  Future<void> fetchResults(String query) async {
+    await _fetchResults(query);
   }
 
   Future<void> _fetchResults([String? query]) async {
     final searchText = query ?? searchController.text;
-
-    print("QUERY: $searchText");
 
     if (searchText.length < 2) {
       searchResults.value = [];
@@ -114,13 +97,13 @@ class SearchViewModel {
     errorMessage.value = null;
 
     try {
-      final backendResults = await SearchRemoteDataSource.getSearchResults(
+      final backendResults = await searchDataSource.getSearchResults(
         query: searchText,
-        tipo: selectedTipo,
+        tipo: _selectedTipo,
       );
-
-      searchResults.value =
-          backendResults.map((json) => SearchResult.fromBackend(json)).toList();
+      searchResults.value = backendResults
+          .map((json) => SearchResult.fromBackend(json))
+          .toList();
     } catch (e) {
       errorMessage.value = 'Error: $e';
       searchResults.value = [];
@@ -129,7 +112,11 @@ class SearchViewModel {
     }
   }
 
-  Future<void> fetchResults(String query) async {
-    await _fetchResults(query);
+  void dispose() {
+    _debounceTimer?.cancel();
+    searchController.dispose();
+    searchResults.dispose();
+    isLoading.dispose();
+    errorMessage.dispose();
   }
 }

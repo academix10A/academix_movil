@@ -4,11 +4,13 @@ import 'package:academix/core/themes/app_text_styles.dart';
 import 'package:academix/core/themes/app_colors.dart';
 import 'package:academix/core/constants/app_radius.dart';
 import 'package:academix/core/routes/app_routes.dart';
+import 'package:academix/core/network/dio_client.dart';
+import 'package:academix/features/library/domain/entities/library_resource_entity.dart';
 import 'package:academix/features/library/presentation/view/ai_chat_screen.dart';
 import 'package:academix/features/library/presentation/view/recurso_viewer_screen.dart';
 import 'package:academix/features/library/presentation/viewmodel/book_detail_viewmodel.dart';
-import 'package:academix/features/library/presentation/viewmodel/library_viewmodel.dart';
-import 'package:academix/features/library/domain/entities/library_entity.dart';
+import 'package:academix/features/library/data/models/library_resource_ui_model.dart';
+import 'package:academix/features/library/presentation/viewmodel/library_di.dart';
 import 'package:academix/features/library/presentation/viewmodel/url_detector.dart';
 import 'package:academix/features/note/presentation/view/create_note_screen.dart';
 import 'package:academix/features/library/presentation/view/resource_shared_notes_screen.dart';
@@ -16,31 +18,54 @@ import 'package:academix/features/library/presentation/view/resource_shared_note
 class BookDetailScreen extends StatefulWidget {
   final LibraryResource resource;
 
-  const BookDetailScreen({
-    super.key,
-    required this.resource,
-  });
+  const BookDetailScreen({super.key, required this.resource});
 
   @override
   State<BookDetailScreen> createState() => _BookDetailScreenState();
 }
 
 class _BookDetailScreenState extends State<BookDetailScreen> {
-  final BookDetailViewModel vm = BookDetailViewModel();
+  BookDetailViewModel? _vm;
   double _fontSize = 16.0;
   bool _isReadingMode = false;
 
-  // ── Helpers ──────────────────────────────────────────────────────────────
+  @override
+  void initState() {
+    super.initState();
+    _initViewModel();
+  }
+
+  Future<void> _initViewModel() async {
+    int idUsuario = 1;
+    try {
+      final response = await DioClient.dio.get('/usuarios/me');
+      idUsuario = response.data['id_usuario'] as int;
+    } catch (_) {}
+
+    if (!mounted) return;
+
+    final vm = LibraryDI.bookDetailViewModel(idUsuario: idUsuario);
+    vm.loadResource(int.parse(widget.resource.id));
+    vm.loadFavoriteStatus(int.parse(widget.resource.id));
+
+    setState(() => _vm = vm);
+  }
+
+  @override
+  void dispose() {
+    _vm?.dispose();
+    super.dispose();
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
 
   UrlType get _urlType => UrlDetector.detect(widget.resource.urlArchivo);
 
-  /// true cuando el recurso tiene contenido externo (URL) que abrir
   bool get _tieneVisor {
     final url = widget.resource.urlArchivo ?? '';
     return url.isNotEmpty;
   }
 
-  /// true cuando el recurso es solo texto interno (sin URL real o tipo texto)
   bool get _esSoloTexto => !_tieneVisor;
 
   String get _botonLabel {
@@ -81,17 +106,17 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
       case UrlType.drive:
         return Icons.drive_file_move_rounded;
       default:
-        return _esSoloTexto ? Icons.auto_stories_rounded : Icons.open_in_new_rounded;
+        return _esSoloTexto
+            ? Icons.auto_stories_rounded
+            : Icons.open_in_new_rounded;
     }
   }
 
   void _abrirContenido() {
     if (_esSoloTexto) {
-      // Recurso de solo texto → modo lectura interno
       setState(() => _isReadingMode = true);
       return;
     }
-
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -114,8 +139,10 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
           color: AppColors.background,
           borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
+        child: const Padding(
+          padding: EdgeInsets.all(20),
+          // AiChatScreen also needs DI — wire its ViewModel from outside.
+          // For now the screen handles its own DI internally via AiChatScreen.
           child: AiChatScreen(),
         ),
       ),
@@ -135,14 +162,16 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    vm.loadResource(int.parse(widget.resource.id));
-    vm.loadFavoriteStatus(int.parse(widget.resource.id));
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final vm = _vm;
+
+    if (vm == null) {
+      return const Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Stack(
@@ -158,22 +187,20 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                   ),
                   child: Row(
                     children: [
-                      // Botón atrás
                       GestureDetector(
                         onTap: () => AppNavigator.pop(context),
                         child: Container(
                           padding: const EdgeInsets.all(AppSpacing.sm),
                           decoration: BoxDecoration(
                             color: AppColors.backgroundCard,
-                            borderRadius: BorderRadius.circular(AppRadius.md),
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.md),
                           ),
                           child: const Icon(Icons.arrow_back_rounded,
                               color: AppColors.text, size: 22),
                         ),
                       ),
                       const SizedBox(width: AppSpacing.sm),
-
-                      // Botón favorito
                       ValueListenableBuilder<bool>(
                         valueListenable: vm.isFavorite,
                         builder: (context, isFav, _) {
@@ -181,7 +208,8 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                             onTap: () => vm.toggleFavorite(
                                 int.parse(widget.resource.id)),
                             child: Container(
-                              padding: const EdgeInsets.all(AppSpacing.sm),
+                              padding:
+                                  const EdgeInsets.all(AppSpacing.sm),
                               decoration: BoxDecoration(
                                 color: AppColors.backgroundCard,
                                 borderRadius:
@@ -201,15 +229,14 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                         },
                       ),
                       const SizedBox(width: AppSpacing.sm),
-
-                      // Botón notas compartidas
                       GestureDetector(
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (_) => ResourceSharedNotesScreen(
-                                idRecurso: int.parse(widget.resource.id),
+                                idRecurso:
+                                    int.parse(widget.resource.id),
                                 resourceTitle: widget.resource.title,
                               ),
                             ),
@@ -219,7 +246,8 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                           padding: const EdgeInsets.all(AppSpacing.sm),
                           decoration: BoxDecoration(
                             color: AppColors.backgroundCard,
-                            borderRadius: BorderRadius.circular(AppRadius.md),
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.md),
                           ),
                           child: const Icon(
                               Icons.chat_bubble_outline_rounded,
@@ -227,10 +255,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                               size: 22),
                         ),
                       ),
-
                       const Spacer(),
-
-                      // Botón AI (solo en modo lectura de texto interno)
                       if (_isReadingMode && _esSoloTexto) ...[
                         GestureDetector(
                           onTap: () => _showAiModal(context),
@@ -241,7 +266,8 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                               borderRadius:
                                   BorderRadius.circular(AppRadius.md),
                               border: Border.all(
-                                color: AppColors.primary.withOpacity(0.4),
+                                color:
+                                    AppColors.primary.withOpacity(0.4),
                                 width: 1,
                               ),
                             ),
@@ -250,10 +276,6 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                           ),
                         ),
                         const SizedBox(width: AppSpacing.sm),
-                      ],
-
-                      // Controles de texto (solo lectura interna)
-                      if (_isReadingMode && _esSoloTexto) ...[
                         GestureDetector(
                           onTap: () =>
                               setState(() => _isReadingMode = false),
@@ -271,7 +293,8 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                         const SizedBox(width: AppSpacing.sm),
                         GestureDetector(
                           onTap: () => setState(() {
-                            _fontSize = (_fontSize + 2).clamp(14.0, 28.0);
+                            _fontSize =
+                                (_fontSize + 2).clamp(14.0, 28.0);
                           }),
                           child: Container(
                             padding: const EdgeInsets.all(AppSpacing.sm),
@@ -280,20 +303,20 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                               borderRadius:
                                   BorderRadius.circular(AppRadius.md),
                             ),
-                            child: const Icon(Icons.text_increase_rounded,
-                                color: AppColors.text, size: 22),
+                            child: const Icon(
+                                Icons.text_increase_rounded,
+                                color: AppColors.text,
+                                size: 22),
                           ),
                         ),
                       ],
-
-                      // Badge tipo de recurso
                       if (!_isReadingMode && _tieneVisor)
                         _UrlTypeBadge(urlType: _urlType),
                     ],
                   ),
                 ),
 
-                // ── Contenido scrollable ──────────────────────────────────
+                // ── Scrollable content ────────────────────────────────────
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.symmetric(
@@ -330,7 +353,8 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                             const SizedBox(width: AppSpacing.md),
                             _InfoChip(
                                 icon: Icons.description_outlined,
-                                label: '${widget.resource.pages} páginas'),
+                                label:
+                                    '${widget.resource.pages} páginas'),
                           ],
                         ),
                         const SizedBox(height: AppSpacing.xl),
@@ -343,7 +367,6 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                                 color: AppColors.textMuted, height: 1.6)),
                         const SizedBox(height: AppSpacing.xl),
 
-                        // Contenido texto interno
                         if (_isReadingMode && _esSoloTexto) ...[
                           Text('Contenido',
                               style: AppTextStyles.h2.copyWith(
@@ -381,7 +404,6 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                   ),
                 ),
 
-                // ── Botón principal ───────────────────────────────────────
                 if (!_isReadingMode)
                   Padding(
                     padding: const EdgeInsets.all(AppSpacing.lg),
@@ -393,7 +415,8 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                             vertical: AppSpacing.md),
                         decoration: BoxDecoration(
                           color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          borderRadius:
+                              BorderRadius.circular(AppRadius.md),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -414,7 +437,6 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
             ),
           ),
 
-          // ── FAB crear nota (solo lectura texto interno) ───────────────────
           if (_isReadingMode && _esSoloTexto)
             Positioned(
               right: AppSpacing.xl,
@@ -445,7 +467,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   }
 }
 
-// ── Badge tipo de recurso ──────────────────────────────────────────────────────
+// ── Widgets auxiliares (sin cambios) ──────────────────────────────────────────
 
 class _UrlTypeBadge extends StatelessWidget {
   final UrlType urlType;
@@ -453,29 +475,45 @@ class _UrlTypeBadge extends StatelessWidget {
 
   String get _label {
     switch (urlType) {
-      case UrlType.pdf:       return 'PDF';
-      case UrlType.youtube:   return 'YouTube';
-      case UrlType.video:     return 'Video';
-      case UrlType.audio:     return 'Audio';
-      case UrlType.gutenberg: return 'Libro';
-      case UrlType.openLibrary: return 'Libro';
-      case UrlType.archive:   return 'Archivo';
-      case UrlType.drive:     return 'Drive';
-      case UrlType.html:      return 'Web';
-      default:                return 'Recurso';
+      case UrlType.pdf:
+        return 'PDF';
+      case UrlType.youtube:
+        return 'YouTube';
+      case UrlType.video:
+        return 'Video';
+      case UrlType.audio:
+        return 'Audio';
+      case UrlType.gutenberg:
+      case UrlType.openLibrary:
+        return 'Libro';
+      case UrlType.archive:
+        return 'Archivo';
+      case UrlType.drive:
+        return 'Drive';
+      case UrlType.html:
+        return 'Web';
+      default:
+        return 'Recurso';
     }
   }
 
   IconData get _icon {
     switch (urlType) {
-      case UrlType.pdf:       return Icons.picture_as_pdf_rounded;
-      case UrlType.youtube:   return Icons.play_circle_outline_rounded;
-      case UrlType.video:     return Icons.videocam_outlined;
-      case UrlType.audio:     return Icons.headphones_rounded;
+      case UrlType.pdf:
+        return Icons.picture_as_pdf_rounded;
+      case UrlType.youtube:
+        return Icons.play_circle_outline_rounded;
+      case UrlType.video:
+        return Icons.videocam_outlined;
+      case UrlType.audio:
+        return Icons.headphones_rounded;
       case UrlType.gutenberg:
-      case UrlType.openLibrary: return Icons.menu_book_rounded;
-      case UrlType.drive:     return Icons.drive_file_move_rounded;
-      default:                return Icons.link_rounded;
+      case UrlType.openLibrary:
+        return Icons.menu_book_rounded;
+      case UrlType.drive:
+        return Icons.drive_file_move_rounded;
+      default:
+        return Icons.link_rounded;
     }
   }
 
@@ -503,8 +541,6 @@ class _UrlTypeBadge extends StatelessWidget {
   }
 }
 
-// ── Widgets auxiliares ─────────────────────────────────────────────────────────
-
 class _InfoChip extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -525,8 +561,8 @@ class _InfoChip extends StatelessWidget {
           Icon(icon, size: 16, color: AppColors.textMuted),
           const SizedBox(width: 6),
           Text(label,
-              style:
-                  AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted)),
+              style: AppTextStyles.bodySmall
+                  .copyWith(color: AppColors.textMuted)),
         ],
       ),
     );

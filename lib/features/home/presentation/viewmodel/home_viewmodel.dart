@@ -4,7 +4,7 @@ import '../../domain/entities/home_entity.dart';
 import '../../data/repositories/home_repository_impl.dart';
 import '../../data/datasources/home_remote_datasource.dart';
 import 'package:academix/core/routes/app_routes.dart';
-import 'package:academix/features/library/presentation/viewmodel/library_viewmodel.dart';
+import 'package:academix/features/library/data/models/library_resource_ui_model.dart';
 
 class HomeViewModel {
 

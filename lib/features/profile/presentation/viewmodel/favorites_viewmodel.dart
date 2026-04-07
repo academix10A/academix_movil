@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:academix/core/network/dio_client.dart';
 import 'package:academix/core/routes/app_routes.dart';
 import 'package:academix/features/library/data/datasources/library_remote_datasource.dart';
-import 'package:academix/features/library/presentation/viewmodel/library_viewmodel.dart';
+import 'package:academix/features/library/data/models/library_resource_ui_model.dart';
 
 class LibraryFavoritesViewModel {
   final favoritesResources = ValueNotifier<List<LibraryResource>>([]);
@@ -15,8 +15,7 @@ class LibraryFavoritesViewModel {
       final userResponse = await DioClient.dio.get('/usuarios/me');
       idUsuario = userResponse.data['id_usuario'];
     } catch (e) {
-      debugPrint('Error loading user ID: $e');
-      idUsuario = 1; // fallback
+      idUsuario = 1;
     }
   }
 
@@ -28,8 +27,12 @@ class LibraryFavoritesViewModel {
       return;
     }
     try {
-      final favorites = await _remoteDataSource.getFavorites(idUsuario!);
-      final resources = favorites.map(LibraryResource.fromEntity).toList();
+      // getFavorites() now returns List<LibraryResourceModel>
+      // We need .toEntity() first, then LibraryResource.fromEntity()
+      final models = await _remoteDataSource.getFavorites(idUsuario!);
+      final resources = models
+          .map((m) => LibraryResource.fromEntity(m.toEntity()))
+          .toList();
       favoritesResources.value = resources;
     } catch (e) {
       debugPrint('Error loading favorites: $e');

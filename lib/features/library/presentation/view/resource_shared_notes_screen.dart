@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:academix/core/constants/app_spacing.dart';
-import 'package:academix/core/constants/app_radius.dart';
 import 'package:academix/core/themes/app_colors.dart';
 import 'package:academix/core/themes/app_text_styles.dart';
 import 'package:academix/core/routes/app_routes.dart';
-import 'package:academix/features/library/presentation/viewmodel/resource_shared_notes_viewmodel.dart';
+import 'package:academix/features/note/data/datasources/note_remote_datasource.dart';
 import 'package:academix/features/note/domain/entities/note_entity.dart';
+import 'package:academix/features/library/presentation/viewmodel/resource_shared_notes_viewmodel.dart';
 
 class ResourceSharedNotesScreen extends StatefulWidget {
   final int idRecurso;
@@ -18,17 +18,23 @@ class ResourceSharedNotesScreen extends StatefulWidget {
   });
 
   @override
-  State<ResourceSharedNotesScreen> createState() => _ResourceSharedNotesScreenState();
+  State<ResourceSharedNotesScreen> createState() =>
+      _ResourceSharedNotesScreenState();
 }
 
-class _ResourceSharedNotesScreenState extends State<ResourceSharedNotesScreen> {
-  final ResourceSharedNotesViewModel vm = ResourceSharedNotesViewModel();
+class _ResourceSharedNotesScreenState
+    extends State<ResourceSharedNotesScreen> {
+  late final ResourceSharedNotesViewModel vm;
   final TextEditingController _searchController = TextEditingController();
   bool _isSearching = false;
 
   @override
   void initState() {
     super.initState();
+    // DI: NoteRemoteDataSource injected here; swap for a mock in tests.
+    vm = ResourceSharedNotesViewModel(
+      noteDataSource: NoteRemoteDataSource(),
+    );
     vm.loadSharedNotes(widget.idRecurso);
   }
 
@@ -53,26 +59,28 @@ class _ResourceSharedNotesScreenState extends State<ResourceSharedNotesScreen> {
         title: _isSearching
             ? TextField(
                 controller: _searchController,
-                style: AppTextStyles.body.copyWith(color: AppColors.text),
+                style:
+                    AppTextStyles.body.copyWith(color: AppColors.text),
                 decoration: InputDecoration(
                   hintText: 'Buscar en notas...',
-                  hintStyle: AppTextStyles.body.copyWith(color: AppColors.textMuted),
+                  hintStyle: AppTextStyles.body
+                      .copyWith(color: AppColors.textMuted),
                   border: InputBorder.none,
                 ),
                 autofocus: true,
-                onSubmitted: (_) => vm.updateSearchQuery(_searchController.text),
+                onSubmitted: (_) =>
+                    vm.updateSearchQuery(_searchController.text),
               )
             : Text(
                 'Notas compartidas - ${widget.resourceTitle}',
-                style: AppTextStyles.h1.copyWith(color: AppColors.text),
+                style:
+                    AppTextStyles.h1.copyWith(color: AppColors.text),
               ),
         actions: [
           if (!_isSearching)
             IconButton(
               icon: const Icon(Icons.search),
-              onPressed: () {
-                setState(() => _isSearching = true);
-              },
+              onPressed: () => setState(() => _isSearching = true),
             ),
           if (_isSearching)
             IconButton(
@@ -100,9 +108,12 @@ class _ResourceSharedNotesScreenState extends State<ResourceSharedNotesScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.error_outline, size: 80, color: AppColors.textMuted),
+                      Icon(Icons.error_outline,
+                          size: 80, color: AppColors.textMuted),
                       const SizedBox(height: AppSpacing.md),
-                      Text('Error: $error', style: AppTextStyles.body.copyWith(color: AppColors.textMuted)),
+                      Text('Error: $error',
+                          style: AppTextStyles.body
+                              .copyWith(color: AppColors.textMuted)),
                     ],
                   ),
                 );
@@ -116,16 +127,19 @@ class _ResourceSharedNotesScreenState extends State<ResourceSharedNotesScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.notes_outlined, size: 80, color: AppColors.textMuted),
+                          Icon(Icons.notes_outlined,
+                              size: 80, color: AppColors.textMuted),
                           const SizedBox(height: AppSpacing.md),
                           Text(
                             'No hay notas compartidas',
-                            style: AppTextStyles.h2.copyWith(color: AppColors.textMuted),
+                            style: AppTextStyles.h2
+                                .copyWith(color: AppColors.textMuted),
                           ),
                           const SizedBox(height: AppSpacing.sm),
                           Text(
                             'Sé el primero en compartir tus notas sobre este recurso.',
-                            style: AppTextStyles.body.copyWith(color: AppColors.textMuted),
+                            style: AppTextStyles.body
+                                .copyWith(color: AppColors.textMuted),
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -139,16 +153,20 @@ class _ResourceSharedNotesScreenState extends State<ResourceSharedNotesScreen> {
                     itemBuilder: (context, index) {
                       final note = filteredNotes[index];
                       return Card(
-                        margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                        margin: const EdgeInsets.only(
+                            bottom: AppSpacing.md),
                         color: AppColors.backgroundCard,
                         child: ListTile(
-                          contentPadding: const EdgeInsets.all(AppSpacing.md),
+                          contentPadding:
+                              const EdgeInsets.all(AppSpacing.md),
                           title: Text(
                             note.titulo,
-                            style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
+                            style: AppTextStyles.body.copyWith(
+                                fontWeight: FontWeight.w600),
                           ),
                           subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment:
+                                CrossAxisAlignment.start,
                             children: [
                               const SizedBox(height: AppSpacing.xs),
                               Text(
@@ -162,7 +180,8 @@ class _ResourceSharedNotesScreenState extends State<ResourceSharedNotesScreen> {
                               const SizedBox(height: AppSpacing.xs),
                               Text(
                                 note.timeAgo,
-                                style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+                                style: AppTextStyles.caption.copyWith(
+                                    color: AppColors.textMuted),
                               ),
                             ],
                           ),
