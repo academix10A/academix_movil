@@ -231,51 +231,53 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: resources.map((resource) {
                         return Padding(
                           padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                          child: Container(
-                            padding: const EdgeInsets.all(AppSpacing.md),
-                            decoration: BoxDecoration(
-                              color: AppColors.text,
-                              borderRadius:
-                                  BorderRadius.circular(AppRadius.md),
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        resource['titulo'] ?? '',
-                                        style: AppTextStyles.body.copyWith(
-                                          color: AppColors.background,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      const SizedBox(height: AppSpacing.xs),
-                                      LinearProgressIndicator(
-                                        value:
-                                            (resource['porcentaje_leido'] ?? 0) /
-                                                100,
-                                        backgroundColor: AppColors.textMuted,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                          resource['completado'] == true
-                                              ? AppColors.success
-                                              : AppColors.secondary,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(AppRadius.md),
+                              onTap: () => vm.onReadResourceTap(context, resource),
+                              child: Container(
+                                padding: const EdgeInsets.all(AppSpacing.md),
+                                decoration: BoxDecoration(
+                                  color: AppColors.text,
+                                  borderRadius: BorderRadius.circular(AppRadius.md),
                                 ),
-                                const SizedBox(width: AppSpacing.md),
-                                Text(
-                                  "${resource['porcentaje_leido'] ?? 0}%",
-                                  style: AppTextStyles.bodySmall.copyWith(
-                                    color: AppColors.background,
-                                  ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            resource['titulo'] ?? '',
+                                            style: AppTextStyles.body.copyWith(
+                                              color: AppColors.background,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          const SizedBox(height: AppSpacing.xs),
+                                          LinearProgressIndicator(
+                                            value: (resource['porcentaje_leido'] ?? 0) / 100,
+                                            backgroundColor: AppColors.textMuted,
+                                            valueColor: AlwaysStoppedAnimation<Color>(
+                                              resource['completado'] == true
+                                                  ? AppColors.success
+                                                  : AppColors.secondary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: AppSpacing.md),
+                                    Text(
+                                      "${resource['porcentaje_leido'] ?? 0}%",
+                                      style: AppTextStyles.bodySmall.copyWith(
+                                        color: AppColors.background,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
+                              ),
                             ),
                           ),
                         );

@@ -38,9 +38,6 @@ class NoteRemoteDataSource {
     required String contenido,
     bool esCompartida = false,
   }) async {
-    print("TITULO: $titulo");
-    print("CONTENIDO: $contenido");
-    print("ES_COMPARTIDA: $esCompartida");
     final response = await DioClient.dio.put('/notas/$id', data: {
       'titulo': titulo,
       'contenido': contenido,
@@ -53,5 +50,12 @@ class NoteRemoteDataSource {
   Future<void> deleteNote(int id) async {
     await DioClient.dio.delete('/notas/$id');
   }
+
+  Future<List<NoteEntity>> getSharedNotesByResource(int idRecurso) async {
+    final response = await DioClient.dio.get('/notas/recurso/$idRecurso/compartidas');
+    final List data = response.data['notas'] as List;
+    return data.map((e) => NoteEntity.fromJson(e)).toList();
+  }
 }
+
 

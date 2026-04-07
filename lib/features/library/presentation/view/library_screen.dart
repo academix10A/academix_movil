@@ -3,7 +3,10 @@ import 'package:academix/core/constants/app_spacing.dart';
 import 'package:academix/core/themes/app_text_styles.dart';
 import 'package:academix/core/themes/app_colors.dart';
 import 'package:academix/core/constants/app_radius.dart';
+import 'package:academix/core/network/dio_client.dart';
 import 'package:academix/features/library/presentation/viewmodel/library_viewmodel.dart';
+import 'package:academix/features/library/presentation/viewmodel/library_di.dart';
+import 'package:academix/features/library/data/models/library_resource_ui_model.dart';
 import 'package:academix/features/library/presentation/widgets/library_resource_card.dart';
 
 class LibraryScreen extends StatefulWidget {
@@ -14,21 +17,47 @@ class LibraryScreen extends StatefulWidget {
 }
 
 class _LibraryScreenState extends State<LibraryScreen> {
-  final LibraryViewModel vm = LibraryViewModel();
+  LibraryViewModel? _vm;
 
   @override
   void initState() {
     super.initState();
+    _initViewModel();
+  }
+
+  Future<void> _initViewModel() async {
+    try {
+      final response = await DioClient.dio.get('/usuarios/me');
+      final int idUsuario = response.data['id_usuario'] as int;
+      if (!mounted) return;
+      setState(() {
+        _vm = LibraryDI.libraryViewModel(idUsuario: idUsuario);
+      });
+    } catch (_) {
+      // Fallback: use a default id so the screen still renders
+      if (!mounted) return;
+      setState(() {
+        _vm = LibraryDI.libraryViewModel(idUsuario: 1);
+      });
+    }
   }
 
   @override
   void dispose() {
-    vm.dispose();
+    _vm?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final vm = _vm;
+    if (vm == null) {
+      return const Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       resizeToAvoidBottomInset: true,
       backgroundColor: AppColors.background,
@@ -36,7 +65,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Header ──────────────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.lg,
@@ -47,7 +75,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Logo
                   Text(
                     "ACADEMIX",
                     style: AppTextStyles.display.copyWith(
@@ -57,10 +84,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       fontWeight: FontWeight.w900,
                     ),
                   ),
-
                   const SizedBox(height: AppSpacing.lg),
-
-                  // Section title
                   Text(
                     "Biblioteca",
                     style: AppTextStyles.h1.copyWith(
@@ -76,23 +100,15 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       color: AppColors.textMuted,
                     ),
                   ),
-
                   const SizedBox(height: AppSpacing.lg),
-
-                  // ── Search bar ──────────────────────────────────────────
                   TextField(
                     readOnly: true,
-                    onTap: () {
-                      Navigator.pushNamed(context, '/search');
-                    },
-                    style: AppTextStyles.body.copyWith(
-                      color: AppColors.text,
-                    ),
+                    onTap: () => Navigator.pushNamed(context, '/search'),
+                    style: AppTextStyles.body.copyWith(color: AppColors.text),
                     decoration: InputDecoration(
                       hintText: "Buscar por tema, subtemas",
-                      hintStyle: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.textMuted,
-                      ),
+                      hintStyle: AppTextStyles.bodySmall
+                          .copyWith(color: AppColors.textMuted),
                       filled: true,
                       fillColor: AppColors.backgroundCard,
                       prefixIcon: Icon(
@@ -105,81 +121,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       ),
                     ),
                   ),
-                      // return TextField(
-                      //   textInputAction: TextInputAction.search,
-                      //   focusNode: searchFocusNode,
-                      //   controller: vm.searchController,
-                      //   onTap: () {
-                      //     Navigator.pushNamed(context, '/search');
-                      //   },
-                      //   readOnly: true,
-                      //   // onSubmitted: (value) {
-                      //   //   FocusScope.of(context).unfocus();
-                      //   //   if (value.isNotEmpty) {
-                      //   //     Navigator.pushReplacementNamed(
-                      //   //       context,
-                      //   //       '/search',
-                      //   //       arguments: value,
-                      //   //     );
-                      //   //   }
-                      //   // },
-                      //   style: AppTextStyles.body.copyWith(
-                      //     color: AppColors.text,
-                      //   ),
-                      //   decoration: InputDecoration(
-                      //     hintText: isFocused
-                      //         ? "Presiona Enter para buscar..."
-                      //         : "Buscar por tema, subtemas",
-                      //     hintStyle: AppTextStyles.bodySmall.copyWith(
-                      //       color: AppColors.textMuted,
-                      //     ),
-                      //     filled: true,
-                      //     fillColor: AppColors.backgroundCard,
-                      //     prefixIcon: Icon(
-                      //       Icons.search_rounded,
-                      //       color: isFocused
-                      //           ? AppColors.primary
-                      //           : AppColors.textMuted,
-                      //     ),
-                      //     suffixIcon: ValueListenableBuilder<TextEditingValue>(
-                      //       valueListenable: vm.searchController,
-                      //       builder: (_, value, __) {
-                      //         return value.text.isNotEmpty
-                      //             ? IconButton(
-                      //                 icon: Icon(
-                      //                   Icons.close_rounded,
-                      //                   color: AppColors.textMuted,
-                      //                   size: 20,
-                      //                 ),
-                      //                 onPressed: () =>
-                      //                     vm.searchController.clear(),
-                      //               )
-                      //             : const SizedBox.shrink();
-                      //       },
-                      //     ),
-                      //     border: OutlineInputBorder(
-                      //       borderRadius:
-                      //           BorderRadius.circular(AppRadius.full),
-                      //       borderSide: BorderSide.none,
-                      //     ),
-                      //     focusedBorder: OutlineInputBorder(
-                      //       borderRadius:
-                      //           BorderRadius.circular(AppRadius.full),
-                      //       borderSide: BorderSide(
-                      //         color: AppColors.primary.withOpacity(0.6),
-                      //         width: 1.5,
-                      //       ),
-                      //     ),
-                      //     contentPadding: const EdgeInsets.symmetric(
-                      //       horizontal: AppSpacing.lg,
-                      //       vertical: AppSpacing.md,
-                      //     ),
-                      //   ),
-                      // );
-
                   const SizedBox(height: AppSpacing.md),
-
-                  // ── Category chips ──────────────────────────────────────
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: ValueListenableBuilder<List<String>>(
@@ -240,13 +182,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       },
                     ),
                   ),
-
                   const SizedBox(height: AppSpacing.md),
                 ],
               ),
             ),
-
-            // ── Body: search hint OR resource list ───────────────────────
             Expanded(
               child: ValueListenableBuilder<List<LibraryResource>>(
                 valueListenable: vm.filteredResources,
@@ -273,7 +212,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       ),
                     );
                   }
-
                   return ListView.separated(
                     padding: const EdgeInsets.fromLTRB(
                       AppSpacing.lg,
@@ -282,7 +220,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       AppSpacing.lg,
                     ),
                     itemCount: resources.length,
-                    separatorBuilder: (_, _) =>
+                    separatorBuilder: (_, __) =>
                         const SizedBox(height: AppSpacing.md),
                     itemBuilder: (context, index) {
                       return Hero(
@@ -302,108 +240,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 },
               ),
             ),
-            // Expanded(
-            //   child: ValueListenableBuilder<bool>(
-            //     valueListenable: vm.isSearchFocused,
-            //     builder: (context, isFocused, _) {
-            //       if (isFocused) {
-            //         // Search hint state
-            //         return Center(
-            //           child: Column(
-            //             mainAxisAlignment: MainAxisAlignment.center,
-            //             children: [
-            //               Container(
-            //                 padding: const EdgeInsets.all(AppSpacing.lg),
-            //                 decoration: BoxDecoration(
-            //                   color: AppColors.backgroundCard,
-            //                   shape: BoxShape.circle,
-            //                 ),
-            //                 child: Icon(
-            //                   Icons.search_rounded,
-            //                   size: 48,
-            //                   color: AppColors.primary.withOpacity(0.6),
-            //                 ),
-            //               ),
-            //               const SizedBox(height: AppSpacing.md),
-            //               Text(
-            //                 'Empieza a buscar',
-            //                 style: AppTextStyles.h2.copyWith(
-            //                   color: AppColors.text,
-            //                 ),
-            //               ),
-            //               const SizedBox(height: AppSpacing.xs),
-            //               Text(
-            //                 'Presiona Enter para ver resultados',
-            //                 style: AppTextStyles.bodySmall.copyWith(
-            //                   color: AppColors.textMuted,
-            //                 ),
-            //               ),
-            //             ],
-            //           ),
-            //         );
-            //       }
-
-            //       // Resource list
-            //       return ValueListenableBuilder<List<LibraryResource>>(
-            //         valueListenable: vm.filteredResources,
-            //         builder: (context, resources, _) {
-            //           if (resources.isEmpty) {
-            //             return Center(
-            //               child: Column(
-            //                 mainAxisSize: MainAxisSize.min,
-            //                 children: [
-            //                   Icon(
-            //                     Icons.menu_book_outlined,
-            //                     size: 64,
-            //                     color: AppColors.textMuted.withOpacity(0.5),
-            //                   ),
-            //                   const SizedBox(height: AppSpacing.md),
-            //                   Text(
-            //                     'No hay recursos disponibles',
-            //                     style: AppTextStyles.h2.copyWith(
-            //                       color: AppColors.textMuted,
-            //                       fontSize: 18,
-            //                     ),
-            //                   ),
-            //                 ],
-            //               ),
-            //             );
-            //           }
-
-            //           return ListView.separated(
-            //             padding: const EdgeInsets.fromLTRB(
-            //               AppSpacing.lg,
-            //               0,
-            //               AppSpacing.lg,
-            //               AppSpacing.lg,
-            //             ),
-            //             itemCount: resources.length,
-            //             separatorBuilder: (_, __) =>
-            //                 const SizedBox(height: AppSpacing.md),
-            //             itemBuilder: (context, index) {
-            //               return Hero(
-            //                 tag: 'book-${resources[index].id}',
-            //                 child: Material(
-            //                   color: Colors.transparent,
-            //                   child: LibraryResourceCard(
-            //                     resource: resources[index],
-            //                     onTap: () =>
-            //                         vm.onResourceTap(context, resources[index]),
-            //                   ),
-            //                 ),
-            //               );
-            //             },
-            //           );
-            //         },
-            //       );
-            //     },
-            //   ),
-            // ),
           ],
         ),
       ),
     );
   }
 }
-
-  

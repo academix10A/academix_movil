@@ -1,80 +1,45 @@
-import '../../../../core/network/dio_client.dart';
-import '../../domain/entities/library_entity.dart';
-import 'package:academix/features/library/domain/entities/tema_entity.dart';
+import 'package:academix/core/network/dio_client.dart';
+import '../models/library_resource_model.dart';
+import '../models/tema_resource_model.dart';
 
 class LibraryRemoteDataSource {
-  Future<List<LibraryResourceEntity>> getResources() async {
+  Future<List<LibraryResourceModel>> getResources() async {
     final response = await DioClient.dio.get('/recurso/');
-
-    final List data = response.data;
-
-    return data.map((e) => LibraryResourceEntity.fromJson(e)).toList();
+    final List data = response.data as List;
+    return data
+        .map((e) => LibraryResourceModel.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
-  Future<LibraryResourceEntity> getRecursoById(int id) async {
+  Future<LibraryResourceModel> getRecursoById(int id) async {
     final response = await DioClient.dio.get('/recurso/$id');
-
-    return LibraryResourceEntity.fromJson(response.data);
+    return LibraryResourceModel.fromJson(
+        response.data as Map<String, dynamic>);
   }
 
-  Future<LibraryResourceEntity> postFavorite(int idUsuario, int idRecurso) async {
-    final response = await DioClient.dio.post('/recurso/$idUsuario/$idRecurso');
-
-    return LibraryResourceEntity.fromJson(response.data);
+  Future<void> postFavorite(int idUsuario, int idRecurso) async {
+    await DioClient.dio.post('/recurso/$idUsuario/$idRecurso');
   }
 
-  Future<LibraryResourceEntity> deleteFavorite(int idUsuario, int idRecurso) async {
-    final response = await DioClient.dio.delete('/recurso/$idUsuario/$idRecurso');
-
-    return LibraryResourceEntity.fromJson(response.data);
+  Future<void> deleteFavorite(int idUsuario, int idRecurso) async {
+    await DioClient.dio.delete('/recurso/$idUsuario/$idRecurso');
   }
 
-  Future<List<TemaResourceEntity>> getResourcesFromTemas() async {
-    final response = await DioClient.dio.get('/recurso/temas-con-recursos');
-
-    final List data = response.data;
-
-    List<TemaResourceEntity> resources = [];
-
-    for (var tema in data) {
-      final String temaNombre = tema['nombre'];
-
-      for (var subtema in tema['subtemas']) {
-        final String subtemaNombre = subtema['nombre'];
-
-        for (var recurso in subtema['recursos']) {
-          resources.add(
-            TemaResourceEntity(
-              id: recurso['id_recurso'],
-              titulo: recurso['titulo'],
-              descripcion: recurso['descripcion'] ?? '',
-              tema: temaNombre,
-              subtema: subtemaNombre,
-            ),
-          );
-        }
-      }
-    }
-
-    return resources;
+  Future<List<TemaResourceModel>> getResourcesFromTemas() async {
+    final response =
+        await DioClient.dio.get('/recurso/temas-con-recursos');
+    return TemaResourceModel.fromTemasJson(response.data as List);
   }
 
-  Future<LibraryResourceEntity> getResourceById(int id) async {
-    final response = await DioClient.dio.get('/recurso/$id');
-
-    return LibraryResourceEntity.fromJson(response.data);
-  }
-
-  Future<List<LibraryResourceEntity>> searchResources(String query) async {
+  Future<List<LibraryResourceModel>> searchResources(String query) async {
     final response = await DioClient.dio.get('/recurso/');
+    final List data = response.data as List;
 
-    final List data = response.data;
+    final resources = data
+        .map((e) => LibraryResourceModel.fromJson(e as Map<String, dynamic>))
+        .toList();
 
-    final resources = data.map((e) => LibraryResourceEntity.fromJson(e)).toList();
-
-    if (query.isEmpty) {
-      return resources;
-    }
+    if (query.isEmpty) return resources;
 
     final lowerQuery = query.toLowerCase();
     return resources.where((r) {
@@ -84,12 +49,12 @@ class LibraryRemoteDataSource {
     }).toList();
   }
 
-  Future<List<LibraryResourceEntity>> getFavorites(int idUsuario) async {
-    final response = await DioClient.dio.get('/recurso/favoritos/$idUsuario');
-
-    final List data = response.data;
-
-    return data.map((e) => LibraryResourceEntity.fromJson(e)).toList();
+  Future<List<LibraryResourceModel>> getFavorites(int idUsuario) async {
+    final response =
+        await DioClient.dio.get('/recurso/favoritos/$idUsuario');
+    final List data = response.data as List;
+    return data
+        .map((e) => LibraryResourceModel.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 }
-

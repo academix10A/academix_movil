@@ -12,7 +12,7 @@ import 'features/exam/presentation/view/exam_result_screen.dart';
 import 'features/profile/presentation/view/settings_screen.dart';
 import 'features/profile/presentation/view/premium_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'features/library/presentation/viewmodel/library_viewmodel.dart';
+import 'features/library/data/models/library_resource_ui_model.dart';
 import 'features/note/presentation/viewmodel/notes_viewmodel.dart';
 import 'features/exam/presentation/viewmodel/exams_viewmodel.dart';
 import 'features/auth/presentation/view/register_screen.dart';
@@ -74,12 +74,9 @@ class MyApp extends StatelessWidget {
             );
           case AppRoutes.examResult:
             final args = settings.arguments as Map<String, dynamic>;
-            final exam = args["exam"] as ExamItem?;
-            final completedExam = args["completedExam"] as CompletedExamItem?;
             return MaterialPageRoute(
               builder: (_) => ExamResultScreen(
-                exam: exam,
-                completedExam: completedExam,
+                exam: args["exam"] as ExamItem?,
                 score: args["score"] as int,
                 grade: args["grade"] as String,
                 correctAnswers: args["correctAnswers"] as int,
@@ -105,4 +102,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-

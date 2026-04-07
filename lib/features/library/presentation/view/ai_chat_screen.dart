@@ -6,6 +6,23 @@ import 'package:academix/core/constants/app_radius.dart';
 import 'package:academix/features/library/presentation/viewmodel/ai_viewmodel.dart';
 import 'package:academix/features/library/domain/entities/ai_message_entity.dart';
 
+/// Minimal AiService implementation for development.
+/// Replace with a real HTTP-backed implementation when the AI endpoint is ready.
+class _DevAiService implements AiService {
+  @override
+  Future<String> sendMessage({
+    required String message,
+    required String context,
+  }) async {
+    // TODO: Replace with real API call, e.g.:
+    // final response = await DioClient.dio.post('/ai/chat', data: {...});
+    // return response.data['reply'];
+    await Future.delayed(const Duration(milliseconds: 800));
+    return 'Respuesta IA sobre "$context": esta es una respuesta de ejemplo. '
+        'Conecta tu endpoint real en _DevAiService.';
+  }
+}
+
 class AiChatScreen extends StatefulWidget {
   const AiChatScreen({super.key});
 
@@ -19,7 +36,11 @@ class _AiChatScreenState extends State<AiChatScreen> {
   @override
   void initState() {
     super.initState();
-    vm = AiViewModel();
+    // DI: swap _DevAiService() for your real AiServiceImpl() when ready.
+    vm = AiViewModel(
+      aiService: _DevAiService(),
+      isPremiumUser: false, // TODO: pass from user session
+    );
   }
 
   @override
@@ -40,21 +61,27 @@ class _AiChatScreenState extends State<AiChatScreen> {
               padding: const EdgeInsets.all(AppSpacing.lg),
               child: Row(
                 children: [
-                  Icon(Icons.smart_toy, color: AppColors.primary, size: 28),
+                  const Icon(Icons.smart_toy,
+                      color: AppColors.primary, size: 28),
                   const SizedBox(width: AppSpacing.md),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Academix IA",
-                        style: AppTextStyles.h1.copyWith(color: AppColors.primary),
+                        'Academix IA',
+                        style: AppTextStyles.h1
+                            .copyWith(color: AppColors.primary),
                       ),
-                      ValueListenableBuilder(
+                      ValueListenableBuilder<bool>(
                         valueListenable: vm.isPremium,
                         builder: (context, isPremium, _) => Text(
-                          isPremium ? "Premium Activado" : "Requiere Premium",
+                          isPremium
+                              ? 'Premium Activado'
+                              : 'Requiere Premium',
                           style: AppTextStyles.caption.copyWith(
-                            color: isPremium ? AppColors.success : AppColors.warning,
+                            color: isPremium
+                                ? AppColors.success
+                                : AppColors.warning,
                           ),
                         ),
                       ),
@@ -63,7 +90,9 @@ class _AiChatScreenState extends State<AiChatScreen> {
                 ],
               ),
             ),
-            ValueListenableBuilder(
+
+            // Context box
+            ValueListenableBuilder<String>(
               valueListenable: vm.contextText,
               builder: (context, contextText, _) => Padding(
                 padding: const EdgeInsets.all(AppSpacing.lg),
@@ -72,18 +101,26 @@ class _AiChatScreenState extends State<AiChatScreen> {
                   decoration: BoxDecoration(
                     color: AppColors.backgroundCard,
                     borderRadius: BorderRadius.circular(AppRadius.md),
-                    border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+                    border: Border.all(
+                        color: AppColors.primary.withOpacity(0.2)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Contexto:', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold)),
-                      Text(contextText.isEmpty ? 'Selecciona texto en contenido' : contextText),
+                      Text('Contexto:',
+                          style: AppTextStyles.bodySmall
+                              .copyWith(fontWeight: FontWeight.bold)),
+                      Text(
+                        contextText.isEmpty
+                            ? 'Selecciona texto en contenido'
+                            : contextText,
+                      ),
                     ],
                   ),
                 ),
               ),
             ),
+
             // Chat messages
             Expanded(
               child: ValueListenableBuilder<List<AiMessageEntity>>(
@@ -93,7 +130,8 @@ class _AiChatScreenState extends State<AiChatScreen> {
                     return Center(
                       child: Text(
                         'Empieza seleccionando texto en cualquier recurso',
-                        style: AppTextStyles.body.copyWith(color: AppColors.textMuted),
+                        style: AppTextStyles.body
+                            .copyWith(color: AppColors.textMuted),
                         textAlign: TextAlign.center,
                       ),
                     );
@@ -105,28 +143,42 @@ class _AiChatScreenState extends State<AiChatScreen> {
                       final msg = messages[index];
                       final isUser = msg.isUser;
                       return Align(
-                        alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                        alignment: isUser
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
                         child: Container(
-                          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-                          margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+                          constraints: BoxConstraints(
+                            maxWidth:
+                                MediaQuery.of(context).size.width * 0.75,
+                          ),
+                          margin: const EdgeInsets.symmetric(
+                              vertical: AppSpacing.xs),
                           padding: const EdgeInsets.all(AppSpacing.md),
                           decoration: BoxDecoration(
-                            color: isUser ? AppColors.primary : AppColors.backgroundCard,
-                            borderRadius: BorderRadius.circular(AppRadius.md),
+                            color: isUser
+                                ? AppColors.primary
+                                : AppColors.backgroundCard,
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.md),
                           ),
                           child: Column(
-                            crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                            crossAxisAlignment: isUser
+                                ? CrossAxisAlignment.end
+                                : CrossAxisAlignment.start,
                             children: [
                               Text(
                                 msg.message,
                                 style: AppTextStyles.body.copyWith(
-                                  color: isUser ? AppColors.background : AppColors.text,
+                                  color: isUser
+                                      ? AppColors.background
+                                      : AppColors.text,
                                 ),
                               ),
                               const SizedBox(height: AppSpacing.xs),
                               Text(
                                 _formatTime(msg.timestamp),
-                                style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+                                style: AppTextStyles.caption
+                                    .copyWith(color: AppColors.textMuted),
                               ),
                             ],
                           ),
@@ -137,6 +189,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
                 },
               ),
             ),
+
             // Input
             ValueListenableBuilder<bool>(
               valueListenable: vm.isPremium,
@@ -160,20 +213,38 @@ class _AiChatScreenState extends State<AiChatScreen> {
                           controller: vm.messageController,
                           enabled: isPremium,
                           decoration: InputDecoration(
-                            hintText: isPremium ? 'Pregunta sobre el contexto...' : 'Premium requerido',
-                            hintStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted),
+                            hintText: isPremium
+                                ? 'Pregunta sobre el contexto...'
+                                : 'Premium requerido',
+                            hintStyle: AppTextStyles.bodySmall
+                                .copyWith(color: AppColors.textMuted),
                             filled: true,
                             fillColor: AppColors.backgroundCard,
                             prefixIcon: ValueListenableBuilder<bool>(
                               valueListenable: vm.isLoading,
-                              builder: (context, loading, _) => loading 
-                                ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
-                                : Icon(Icons.send, color: AppColors.textMuted),
+                              builder: (context, loading, _) => loading
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: AppColors.primary),
+                                    )
+                                  : const Icon(Icons.send,
+                                      color: AppColors.textMuted),
                             ),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.full), borderSide: BorderSide.none),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+                            border: OutlineInputBorder(
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.full),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.lg,
+                              vertical: AppSpacing.md,
+                            ),
                           ),
-                          onSubmitted: isPremium ? (_) => vm.sendMessage() : null,
+                          onSubmitted:
+                              isPremium ? (_) => vm.sendMessage() : null,
                         ),
                       ),
                     ],
@@ -188,6 +259,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
   }
 
   String _formatTime(DateTime time) {
-    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+    return '${time.hour.toString().padLeft(2, '0')}:'
+        '${time.minute.toString().padLeft(2, '0')}';
   }
 }

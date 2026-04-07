@@ -8,7 +8,6 @@ import 'package:academix/features/exam/presentation/viewmodel/exams_viewmodel.da
 
 class ExamResultScreen extends StatelessWidget {
   final ExamItem? exam;
-  final CompletedExamItem? completedExam;
   final int score;
   final String grade;
   final int correctAnswers;
@@ -17,243 +16,286 @@ class ExamResultScreen extends StatelessWidget {
   const ExamResultScreen({
     super.key,
     this.exam,
-    this.completedExam,
     required this.score,
     required this.grade,
     required this.correctAnswers,
     required this.totalQuestions,
   });
 
-  // Factory constructor for ExamItem (from taking an exam)
-  factory ExamResultScreen.fromExam({
-    required ExamItem exam,
-    required int score,
-    required String grade,
-    required int correctAnswers,
-    required int totalQuestions,
-  }) {
+  factory ExamResultScreen.fromArgs(Map<String, dynamic> args) {
     return ExamResultScreen(
-      exam: exam,
-      score: score,
-      grade: grade,
-      correctAnswers: correctAnswers,
-      totalQuestions: totalQuestions,
+      exam: args['exam'] as ExamItem?,
+      score: args['score'] as int? ?? 0,
+      grade: args['grade'] as String? ?? '',
+      correctAnswers: args['correctAnswers'] as int? ?? 0,
+      totalQuestions: args['totalQuestions'] as int? ?? 0,
     );
   }
 
-  // Factory constructor for CompletedExamItem (from viewing results)
-  factory ExamResultScreen.fromCompletedExam({
-    required CompletedExamItem completedExam,
-    required int score,
-    required String grade,
-    required int correctAnswers,
-    required int totalQuestions,
-  }) {
-    return ExamResultScreen(
-      completedExam: completedExam,
-      score: score,
-      grade: grade,
-      correctAnswers: correctAnswers,
-      totalQuestions: totalQuestions,
-    );
-  }
-
-  String get _title => exam?.title ?? completedExam?.title ?? '';
-  String get _category => exam?.category ?? 'Examen completado';
+  bool get _isPassed => score >= 70;
+  int get _wrongAnswers => totalQuestions - correctAnswers;
+  String get _title => exam?.title ?? 'Examen';
+  String get _category => exam?.category ?? '';
   String get _difficulty => exam?.difficulty ?? '';
   int get _durationMinutes => exam?.durationMinutes ?? 0;
 
+  Color get _scoreColor {
+    if (score >= 80) return AppColors.success;
+    if (score >= 60) return AppColors.warning;
+    return AppColors.error;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isPassed = grade == "EXCELENTE" || grade == "APROBADO";
-    final wrongAnswers = totalQuestions - correctAnswers;
-
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            children: [
-              const Spacer(),
-
-              // Icono de resultado
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  color: isPassed
-                      ? AppColors.success.withOpacity(0.15)
-                      : AppColors.error.withOpacity(0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  isPassed
-                      ? Icons.emoji_events_rounded
-                      : Icons.sentiment_dissatisfied_rounded,
-                  size: 50,
-                  color: isPassed ? AppColors.success : AppColors.error,
-                ),
+        child: Column(
+          children: [
+            // Header fijo con botón volver
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => AppNavigator.pushReplacementUnique(
+                        context, AppRoutes.main),
+                    child: Container(
+                      padding: const EdgeInsets.all(AppSpacing.sm),
+                      decoration: BoxDecoration(
+                        color: AppColors.backgroundCard,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                      child: Icon(Icons.close_rounded,
+                          color: AppColors.text, size: 22),
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    "Resultado",
+                    style: AppTextStyles.h2.copyWith(color: AppColors.text),
+                  ),
+                  const Spacer(),
+                  const SizedBox(width: 42), // balance
+                ],
               ),
+            ),
 
-              const SizedBox(height: AppSpacing.xl),
-
-              // Título
-              Text(
-                isPassed ? "¡Felicidades!" : "¡Inténtalo de nuevo!",
-                style: AppTextStyles.display.copyWith(
-                  color: AppColors.primary,
-                  fontSize: 28,
-                ),
-              ),
-
-              const SizedBox(height: AppSpacing.sm),
-
-              // Subtítulo
-              Text(
-                "Has completado el examen",
-                style: AppTextStyles.body.copyWith(
-                  color: AppColors.textMuted,
-                ),
-              ),
-
-              const SizedBox(height: AppSpacing.xxl),
-
-              // Tarjeta de puntuación
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(AppSpacing.xl),
-                decoration: BoxDecoration(
-                  color: AppColors.backgroundCard,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                ),
+            // Contenido scrollable
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 child: Column(
                   children: [
-                    // Puntuación circular
-                    Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        SizedBox(
-                          width: 140,
-                          height: 140,
-                          child: CircularProgressIndicator(
-                            value: score / 100,
-                            strokeWidth: 10,
-                            backgroundColor: AppColors.border,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              isPassed ? AppColors.success : AppColors.error,
-                            ),
-                          ),
-                        ),
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              "$score%",
-                              style: AppTextStyles.display.copyWith(
-                                color: AppColors.text,
-                                fontSize: 36,
-                              ),
-                            ),
-                            Text(
-                              grade,
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: isPassed
-                                    ? AppColors.success
-                                    : AppColors.error,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 1,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                    const SizedBox(height: AppSpacing.lg),
+
+                    // Icono y mensaje principal
+                    Container(
+                      width: 88,
+                      height: 88,
+                      decoration: BoxDecoration(
+                        color: _scoreColor.withOpacity(0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        _isPassed
+                            ? Icons.emoji_events_rounded
+                            : Icons.refresh_rounded,
+                        size: 44,
+                        color: _scoreColor,
+                      ),
+                    ),
+
+                    const SizedBox(height: AppSpacing.lg),
+
+                    Text(
+                      _isPassed ? '¡Felicidades!' : '¡Sigue practicando!',
+                      style: AppTextStyles.display.copyWith(
+                        color: AppColors.text,
+                        fontSize: 26,
+                      ),
+                    ),
+
+                    const SizedBox(height: AppSpacing.xs),
+
+                    Text(
+                      _title,
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.body.copyWith(
+                        color: AppColors.textMuted,
+                        fontSize: 14,
+                      ),
                     ),
 
                     const SizedBox(height: AppSpacing.xl),
 
-                    // Detalles
-                    Row(
-                      children: [
-                        _StatItem(
-                          icon: Icons.check_circle_outline_rounded,
-                          value: "$correctAnswers",
-                          label: "Correctas",
-                          color: AppColors.success,
-                        ),
-                        const SizedBox(width: AppSpacing.lg),
-                        _StatItem(
-                          icon: Icons.cancel_outlined,
-                          value: "$wrongAnswers",
-                          label: "Incorrectas",
-                          color: AppColors.error,
-                        ),
-                        const SizedBox(width: AppSpacing.lg),
-                        _StatItem(
-                          icon: Icons.quiz_outlined,
-                          value: "$totalQuestions",
-                          label: "Total",
-                          color: AppColors.primary,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+                    // Tarjeta score principal
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(AppSpacing.xl),
+                      decoration: BoxDecoration(
+                        color: AppColors.backgroundCard,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                      child: Column(
+                        children: [
+                          // Círculo de progreso
+                          SizedBox(
+                            width: 140,
+                            height: 140,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 140,
+                                  height: 140,
+                                  child: CircularProgressIndicator(
+                                    value: score / 100,
+                                    strokeWidth: 10,
+                                    backgroundColor:
+                                        AppColors.border.withOpacity(0.3),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        _scoreColor),
+                                    strokeCap: StrokeCap.round,
+                                  ),
+                                ),
+                                Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      '$score%',
+                                      style: AppTextStyles.display.copyWith(
+                                        color: AppColors.text,
+                                        fontSize: 34,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: _scoreColor.withOpacity(0.15),
+                                        borderRadius: BorderRadius.circular(
+                                            AppRadius.full),
+                                      ),
+                                      child: Text(
+                                        grade,
+                                        style: AppTextStyles.bodySmall.copyWith(
+                                          color: _scoreColor,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 10,
+                                          letterSpacing: 1,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
 
-              const SizedBox(height: AppSpacing.lg),
+                          const SizedBox(height: AppSpacing.xl),
 
-              // Info del examen
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                decoration: BoxDecoration(
-                  color: AppColors.backgroundCard,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Detalles del examen",
-                      style: AppTextStyles.h2.copyWith(
-                        color: AppColors.text,
-                        fontSize: 16,
+                          // Stats: correctas, incorrectas, total
+                          if (totalQuestions > 0)
+                            Row(
+                              children: [
+                                _StatBadge(
+                                  icon: Icons.check_circle_outline_rounded,
+                                  value: '$correctAnswers',
+                                  label: 'Correctas',
+                                  color: AppColors.success,
+                                ),
+                                const SizedBox(width: AppSpacing.sm),
+                                _StatBadge(
+                                  icon: Icons.cancel_outlined,
+                                  value: '$_wrongAnswers',
+                                  label: 'Incorrectas',
+                                  color: AppColors.error,
+                                ),
+                                const SizedBox(width: AppSpacing.sm),
+                                _StatBadge(
+                                  icon: Icons.quiz_outlined,
+                                  value: '$totalQuestions',
+                                  label: 'Total',
+                                  color: AppColors.primary,
+                                ),
+                              ],
+                            ),
+                        ],
                       ),
                     ),
+
                     const SizedBox(height: AppSpacing.md),
-                    _DetailRow(label: "Título", value: _title),
-                    const SizedBox(height: AppSpacing.sm),
-                    _DetailRow(label: "Categoría", value: _category),
-                    const SizedBox(height: AppSpacing.sm),
-                    _DetailRow(label: "Dificultad", value: _difficulty),
-                    const SizedBox(height: AppSpacing.sm),
-                    _DetailRow(
-                      label: "Tiempo",
-                      value: "$_durationMinutes minutos",
-                    ),
+
+                    // Detalles del examen (solo si hay datos)
+                    if (_category.isNotEmpty ||
+                        _difficulty.isNotEmpty ||
+                        _durationMinutes > 0)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        decoration: BoxDecoration(
+                          color: AppColors.backgroundCard,
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Detalles del examen",
+                              style: AppTextStyles.h2.copyWith(
+                                color: AppColors.text,
+                                fontSize: 15,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            if (_category.isNotEmpty &&
+                                _category != 'Examen completado')
+                              _DetailRow(label: "Categoría", value: _category),
+                            if (_difficulty.isNotEmpty && _difficulty != 'N/A')
+                              Padding(
+                                padding: const EdgeInsets.only(top: AppSpacing.sm),
+                                child: _DetailRow(
+                                    label: "Dificultad", value: _difficulty),
+                              ),
+                            if (_durationMinutes > 0)
+                              Padding(
+                                padding: const EdgeInsets.only(top: AppSpacing.sm),
+                                child: _DetailRow(
+                                  label: "Duración",
+                                  value: "$_durationMinutes min",
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+
+                    const SizedBox(height: AppSpacing.xl),
                   ],
                 ),
               ),
+            ),
 
-              const Spacer(),
-
-              // Botones de acción
-              Row(
+            // Botones de acción fijos abajo
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                border: Border(
+                  top: BorderSide(color: AppColors.border, width: 1),
+                ),
+              ),
+              child: Row(
                 children: [
-                  // Volver a exámenes
                   Expanded(
                     child: GestureDetector(
-                      onTap: () {
-                        AppNavigator.pushReplacementUnique(
-                          context,
-                          AppRoutes.main,
-                        );
-                      },
+                      onTap: () => AppNavigator.pushReplacementUnique(
+                          context, AppRoutes.main),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          vertical: AppSpacing.md,
-                        ),
+                            vertical: AppSpacing.md),
                         decoration: BoxDecoration(
                           color: AppColors.backgroundCard,
                           borderRadius: BorderRadius.circular(AppRadius.md),
@@ -261,17 +303,15 @@ class ExamResultScreen extends StatelessWidget {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
-                              Icons.list_alt_rounded,
-                              color: AppColors.text,
-                              size: 20,
-                            ),
+                            Icon(Icons.list_alt_rounded,
+                                color: AppColors.text, size: 18),
                             const SizedBox(width: AppSpacing.sm),
                             Text(
                               "Ver exámenes",
                               style: AppTextStyles.body.copyWith(
                                 color: AppColors.text,
                                 fontWeight: FontWeight.w500,
+                                fontSize: 14,
                               ),
                             ),
                           ],
@@ -279,63 +319,59 @@ class ExamResultScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.md),
-                  // Repetir examen
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        AppNavigator.pushReplacement(
+                  if (exam != null) ...[
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => AppNavigator.pushReplacement(
                           context,
                           AppRoutes.examTake,
                           arguments: exam,
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: AppSpacing.md,
                         ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(AppRadius.md),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.replay_rounded,
-                              color: AppColors.background,
-                              size: 20,
-                            ),
-                            const SizedBox(width: AppSpacing.sm),
-                            Text(
-                              "Repetir",
-                              style: AppTextStyles.body.copyWith(
-                                color: AppColors.background,
-                                fontWeight: FontWeight.w600,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: AppSpacing.md),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.replay_rounded,
+                                  color: AppColors.background, size: 18),
+                              const SizedBox(width: AppSpacing.sm),
+                              Text(
+                                "Repetir",
+                                style: AppTextStyles.body.copyWith(
+                                  color: AppColors.background,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _StatItem extends StatelessWidget {
+class _StatBadge extends StatelessWidget {
   final IconData icon;
   final String value;
   final String label;
   final Color color;
 
-  const _StatItem({
+  const _StatBadge({
     required this.icon,
     required this.value,
     required this.label,
@@ -345,25 +381,33 @@ class _StatItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 22),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: AppTextStyles.h2.copyWith(
-              color: AppColors.text,
-              fontSize: 20,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 20),
+            const SizedBox(height: 6),
+            Text(
+              value,
+              style: AppTextStyles.h2.copyWith(
+                color: AppColors.text,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          Text(
-            label,
-            style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textMuted,
-              fontSize: 11,
+            Text(
+              label,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.textMuted,
+                fontSize: 11,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -382,9 +426,7 @@ class _DetailRow extends StatelessWidget {
       children: [
         Text(
           label,
-          style: AppTextStyles.bodySmall.copyWith(
-            color: AppColors.textMuted,
-          ),
+          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted),
         ),
         Text(
           value,
@@ -397,4 +439,3 @@ class _DetailRow extends StatelessWidget {
     );
   }
 }
-

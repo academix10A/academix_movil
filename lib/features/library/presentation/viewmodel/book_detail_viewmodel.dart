@@ -1,48 +1,62 @@
 import 'package:flutter/material.dart';
-import 'package:academix/features/library/domain/entities/library_entity.dart';
-import 'package:academix/features/library/data/datasources/library_remote_datasource.dart';
+import 'package:academix/features/library/domain/entities/library_resource_entity.dart';
+import 'package:academix/features/library/domain/usecases/get_resource_by_id_usecase.dart';
+import 'package:academix/features/library/domain/usecases/get_favorites_usecase.dart';
+import 'package:academix/features/library/domain/usecases/toggle_favorite_usecase.dart';
 
 class BookDetailViewModel {
-  final ValueNotifier<LibraryResourceEntity?> resource =
-      ValueNotifier(null);
+  final GetResourceByIdUseCase getResourceByIdUseCase;
+  final GetFavoritesUseCase getFavoritesUseCase;
+  final ToggleFavoriteUseCase toggleFavoriteUseCase;
+  final int idUsuario;
 
+  BookDetailViewModel({
+    required this.getResourceByIdUseCase,
+    required this.getFavoritesUseCase,
+    required this.toggleFavoriteUseCase,
+    required this.idUsuario,
+  });
+
+  final ValueNotifier<LibraryResourceEntity?> resource = ValueNotifier(null);
   final ValueNotifier<bool> isLoading = ValueNotifier(true);
+  final ValueNotifier<bool> isFavorite = ValueNotifier(false);
 
-  final LibraryRemoteDataSource _remoteDataSource =
-      LibraryRemoteDataSource();
+  Future<void> loadFavoriteStatus(int idRecurso) async {
+    try {
+      final favorites = await getFavoritesUseCase(idUsuario);
+      isFavorite.value = favorites.any((e) => e.idRecurso == idRecurso);
+    } catch (_) {
+      // Non-critical
+    }
+  }
+
+  Future<void> toggleFavorite(int idRecurso) async {
+    try {
+      await toggleFavoriteUseCase(
+        idUsuario: idUsuario,
+        idRecurso: idRecurso,
+        isCurrentlyFavorite: isFavorite.value,
+      );
+      isFavorite.value = !isFavorite.value;
+    } catch (e) {
+      debugPrint('Error toggling favorite: $e');
+    }
+  }
 
   Future<void> loadResource(int id) async {
+    isLoading.value = true;
     try {
-      isLoading.value = true;
-
-      final data = await _remoteDataSource.getRecursoById(id);
-
-      resource.value = data;
-    } catch (e) {
+      resource.value = await getResourceByIdUseCase(id);
+    } catch (_) {
       resource.value = null;
     } finally {
       isLoading.value = false;
     }
   }
 
-  Future<void> addFavorite(int idUsuario, int idRecurso) async {
-    try {
-      await _remoteDataSource.postFavorite(idUsuario, idRecurso);
-    } catch (e) {
-      // Handle error (snackbar in UI)
-    }
-  }
-
-  Future<void> deleteFavorite(int idUsuario, int idRecurso) async {
-    try {
-      await _remoteDataSource.deleteFavorite(idUsuario, idRecurso);
-    } catch (e) {
-      // Handle error (snackbar in UI)
-    }
-  }
-
   void dispose() {
     resource.dispose();
     isLoading.dispose();
+    isFavorite.dispose();
   }
 }

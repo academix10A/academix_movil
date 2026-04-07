@@ -3,7 +3,16 @@ import 'package:academix/core/constants/app_spacing.dart';
 import 'package:academix/core/themes/app_text_styles.dart';
 import 'package:academix/core/themes/app_colors.dart';
 import 'package:academix/core/routes/app_routes.dart';
+import 'package:academix/features/auth/data/datasources/auth_remote_datasource.dart';
+import 'package:academix/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:academix/features/auth/domain/usecases/register_user_usecase.dart';
 import 'package:academix/features/auth/presentation/viewmodel/register_viewmodel.dart';
+
+RegisterViewModel _buildViewModel() {
+  final remote = AuthRemoteDataSource();
+  final repository = AuthRepositoryImpl(remote);
+  return RegisterViewModel(registerUseCase: RegisterUserUseCase(repository));
+}
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -13,7 +22,13 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final RegisterViewModel vm = RegisterViewModel();
+  late final RegisterViewModel vm;
+
+  @override
+  void initState() {
+    super.initState();
+    vm = _buildViewModel();
+  }
 
   @override
   void dispose() {
@@ -40,11 +55,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Logo
-                  Image.asset(
-                    "assets/images/logo.png",
-                    height: 128,
-                  ),
+                  Image.asset("assets/images/logo.png", height: 128),
                   const SizedBox(height: AppSpacing.sm),
 
                   Text(
@@ -57,84 +68,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   Text(
                     "Crea tu cuenta gratis",
                     textAlign: TextAlign.center,
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textMuted,
-                    ),
+                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted),
                   ),
                   const SizedBox(height: AppSpacing.xl),
 
-                  // Nombre
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Nombre",
-                        style: AppTextStyles.bodySmall.copyWith(
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.text,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      TextField(
-                        controller: vm.nameController,
-                        style: AppTextStyles.body.copyWith(
-                          color: AppColors.text,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: "Juan",
-                          hintStyle: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.textMuted,
-                          ),
-                          filled: true,
-                          fillColor: AppColors.backgroundCard,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 16,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                    ],
-                  ),
+                  _buildLabel("Nombre"),
+                  const SizedBox(height: AppSpacing.sm),
+                  _buildTextField(controller: vm.nameController, hint: "Juan"),
+                  const SizedBox(height: AppSpacing.lg),
+
                   Row(
                     children: [
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              "Apellido Paterno",
-                              style: AppTextStyles.bodySmall.copyWith(
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.text,
-                              ),
-                            ),
+                            _buildLabel("Apellido Paterno"),
                             const SizedBox(height: AppSpacing.sm),
-                            TextField(
+                            _buildTextField(
                               controller: vm.apellidoPaternoController,
-                              style: AppTextStyles.body.copyWith(
-                                color: AppColors.text,
-                              ),
-                              decoration: InputDecoration(
-                                hintText: "Perez",
-                                hintStyle: AppTextStyles.bodySmall.copyWith(
-                                  color: AppColors.textMuted,
-                                ),
-                                filled: true,
-                                fillColor: AppColors.backgroundCard,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none,
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 16,
-                                ),
-                              ),
+                              hint: "Perez",
                             ),
                           ],
                         ),
@@ -144,35 +97,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              "Apellido Materno",
-                              style: AppTextStyles.bodySmall.copyWith(
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.text,
-                              ),
-                            ),
+                            _buildLabel("Apellido Materno"),
                             const SizedBox(height: AppSpacing.sm),
-                            TextField(
+                            _buildTextField(
                               controller: vm.apellidoMaternoController,
-                              style: AppTextStyles.body.copyWith(
-                                color: AppColors.text,
-                              ),
-                              decoration: InputDecoration(
-                                hintText: "Gonzalez",
-                                hintStyle: AppTextStyles.bodySmall.copyWith(
-                                  color: AppColors.textMuted,
-                                ),
-                                filled: true,
-                                fillColor: AppColors.backgroundCard,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none,
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 16,
-                                ),
-                              ),
+                              hint: "Gonzalez",
                             ),
                           ],
                         ),
@@ -181,139 +110,47 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: AppSpacing.lg),
 
-                  // Email
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Correo electrónico",
-                        style: AppTextStyles.bodySmall.copyWith(
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.text,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      TextField(
-                        controller: vm.emailController,
-                        style: AppTextStyles.body.copyWith(
-                          color: AppColors.text,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: "tucorreo@ejemplo.com",
-                          hintStyle: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.textMuted,
-                          ),
-                          filled: true,
-                          fillColor: AppColors.backgroundCard,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 16,
-                          ),
-                        ),
-                      ),
-                    ],
+                  _buildLabel("Correo electrónico"),
+                  const SizedBox(height: AppSpacing.sm),
+                  _buildTextField(
+                    controller: vm.emailController,
+                    hint: "tucorreo@ejemplo.com",
                   ),
                   const SizedBox(height: AppSpacing.lg),
 
-                  // Password
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Contraseña",
-                        style: AppTextStyles.bodySmall.copyWith(
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.text,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      TextField(
-                        controller: vm.passwordController,
-                        obscureText: true,
-                        style: AppTextStyles.body.copyWith(
-                          color: AppColors.text,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: "Mínimo 8 caracteres",
-                          hintStyle: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.textMuted,
-                          ),
-                          filled: true,
-                          fillColor: AppColors.backgroundCard,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 16,
-                          ),
-                        ),
-                      ),
-                    ],
+                  _buildLabel("Contraseña"),
+                  const SizedBox(height: AppSpacing.sm),
+                  _buildTextField(
+                    controller: vm.passwordController,
+                    hint: "Mínimo 8 caracteres",
+                    obscure: true,
                   ),
                   const SizedBox(height: AppSpacing.sm),
 
-                  // Confirm Password
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Confirmar contraseña",
-                        style: AppTextStyles.bodySmall.copyWith(
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.text,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      TextField(
-                        controller: vm.confirmPasswordController,
-                        obscureText: true,
-                        style: AppTextStyles.body.copyWith(
-                          color: AppColors.text,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: "Repite tu contraseña",
-                          hintStyle: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.textMuted,
-                          ),
-                          filled: true,
-                          fillColor: AppColors.backgroundCard,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 16,
-                          ),
-                        ),
-                      ),
-                    ],
+                  _buildLabel("Confirmar contraseña"),
+                  const SizedBox(height: AppSpacing.sm),
+                  _buildTextField(
+                    controller: vm.confirmPasswordController,
+                    hint: "Repite tu contraseña",
+                    obscure: true,
                   ),
                   const SizedBox(height: AppSpacing.lg),
 
-                  // Button Register
                   ElevatedButton(
-                    onPressed: vm.isLoading 
-                      ? null 
-                      : () async {
-                          final success = await vm.register();
-                          if (success && context.mounted) {
-                            // Mock to main
-                            Navigator.pushNamedAndRemoveUntil(
-                              context,
-                              AppRoutes.main,
-                              (route) => false,
-                            );
-                          } else {
-                            setState(() {});
-                          }
-                        },
+                    onPressed: vm.isLoading
+                        ? null
+                        : () async {
+                            final success = await vm.register();
+                            if (success && context.mounted) {
+                              Navigator.pushNamedAndRemoveUntil(
+                                context,
+                                AppRoutes.main,
+                                (route) => false,
+                              );
+                            } else {
+                              setState(() {});
+                            }
+                          },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: AppColors.background,
@@ -324,25 +161,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       elevation: 0,
                     ),
                     child: vm.isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Text(
+                            "Crear Cuenta",
+                            style: AppTextStyles.body.copyWith(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        )
-                      : Text(
-                          "Crear Cuenta",
-                          style: AppTextStyles.body.copyWith(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
 
-                  // Link login
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -390,5 +226,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
     );
   }
-}
 
+  Widget _buildLabel(String text) => Text(
+    text,
+    style: AppTextStyles.bodySmall.copyWith(
+      fontWeight: FontWeight.w500,
+      color: AppColors.text,
+    ),
+  );
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hint,
+    bool obscure = false,
+  }) =>
+      TextField(
+        controller: controller,
+        obscureText: obscure,
+        style: AppTextStyles.body.copyWith(color: AppColors.text),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted),
+          filled: true,
+          fillColor: AppColors.backgroundCard,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ),
+      );
+}

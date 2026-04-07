@@ -1,4 +1,8 @@
-class LibraryResourceEntity {
+import 'package:academix/features/library/domain/entities/library_resource_entity.dart';
+
+/// Data model — lives in data/models.
+/// Responsible for JSON parsing (fromJson) and mapping to domain entity (toEntity).
+class LibraryResourceModel {
   final int idRecurso;
   final String titulo;
   final String? descripcion;
@@ -11,7 +15,7 @@ class LibraryResourceEntity {
   final String? nombreTipo;
   final String? nombreSubtema;
 
-  LibraryResourceEntity({
+  const LibraryResourceModel({
     required this.idRecurso,
     required this.titulo,
     this.descripcion,
@@ -25,8 +29,8 @@ class LibraryResourceEntity {
     this.nombreSubtema,
   });
 
-  factory LibraryResourceEntity.fromJson(Map<String, dynamic> json) {
-    return LibraryResourceEntity(
+  factory LibraryResourceModel.fromJson(Map<String, dynamic> json) {
+    return LibraryResourceModel(
       idRecurso: json['id_recurso'] ?? 0,
       titulo: json['titulo'] ?? '',
       descripcion: json['descripcion'],
@@ -43,23 +47,19 @@ class LibraryResourceEntity {
     );
   }
 
-  // Mapper para compatibilidad con la UI existente
-  String get category => nombreSubtema ?? 'General';
-  
-  int get durationMinutes {
-    // Estimación basada en la longitud del contenido
-    if (contenido != null) {
-      return (contenido!.length / 500).ceil();
-    }
-    return 30;
-  }
-  
-  int get pages {
-    // Estimación de páginas
-    if (contenido != null) {
-      return (contenido!.length / 1000).ceil();
-    }
-    return 10;
+  LibraryResourceEntity toEntity() {
+    return LibraryResourceEntity(
+      idRecurso: idRecurso,
+      titulo: titulo,
+      descripcion: descripcion,
+      contenido: contenido,
+      urlArchivo: urlArchivo,
+      fechaPublicacion: fechaPublicacion,
+      idTipo: idTipo,
+      idEstado: idEstado,
+      idSubtema: idSubtema,
+      nombreTipo: nombreTipo,
+      nombreSubtema: nombreSubtema,
+    );
   }
 }
-

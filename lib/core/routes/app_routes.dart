@@ -29,6 +29,7 @@ abstract class AppRoutes {
   static const String createNote = '/create-note';
   static const String examTake = '/exam-take';
   static const String examResult = '/exam-result';
+  static const String resourceSharedNotes = '/resource-shared-notes';
   static const String register = '/register';
   static const String forgotPassword = '/forgot-password';
 }

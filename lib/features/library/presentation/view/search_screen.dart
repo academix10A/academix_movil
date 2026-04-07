@@ -3,7 +3,8 @@ import 'package:academix/core/constants/app_spacing.dart';
 import 'package:academix/core/constants/app_radius.dart';
 import 'package:academix/core/themes/app_text_styles.dart';
 import 'package:academix/core/themes/app_colors.dart';
-import '../viewmodel/search_viewmodel.dart';
+import 'package:academix/features/library/presentation/viewmodel/search_viewmodel.dart';
+import 'package:academix/features/library/presentation/viewmodel/library_di.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -13,43 +14,28 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  final SearchViewModel vm = SearchViewModel();
+  late final SearchViewModel vm;
+  bool _initialized = false;
 
   @override
   void initState() {
     super.initState();
-    // Lee el argumento antes del primer frame para evitar
-    // que el autofocus dispare listeners con texto vacío.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final String? query =
-          ModalRoute.of(context)?.settings.arguments as String?;
-      if (query != null && query.isNotEmpty) {
-        // 1. Asigna el texto sin notificar listeners intermedios
-        vm.searchController.value = TextEditingValue(
-          text: query,
-          selection: TextSelection.collapsed(offset: query.length),
-        );
-        // 2. Ejecuta la búsqueda directamente con el query
-        vm.fetchResults(query);
-      }
-    });
+    vm = LibraryDI.searchViewModel();
   }
-
-  bool _initialized = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
     if (!_initialized) {
       final String? query =
           ModalRoute.of(context)?.settings.arguments as String?;
-
       if (query != null && query.isNotEmpty) {
-        vm.searchController.text = query;
+        vm.searchController.value = TextEditingValue(
+          text: query,
+          selection: TextSelection.collapsed(offset: query.length),
+        );
         vm.fetchResults(query);
       }
-
       _initialized = true;
     }
   }
@@ -78,7 +64,8 @@ class _SearchScreenState extends State<SearchScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -93,34 +80,35 @@ class _SearchScreenState extends State<SearchScreen> {
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     'Recursos, notas y exámenes',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textMuted,
-                    ),
+                    style: AppTextStyles.bodySmall
+                        .copyWith(color: AppColors.textMuted),
                   ),
                   const SizedBox(height: AppSpacing.lg),
-                  // Search field
                   TextField(
                     controller: vm.searchController,
                     onChanged: vm.onSearch,
                     autofocus: true,
-                    style: AppTextStyles.body.copyWith(color: AppColors.text),
+                    style:
+                        AppTextStyles.body.copyWith(color: AppColors.text),
                     decoration: InputDecoration(
                       hintText: 'Buscar temas, títulos...',
                       hintStyle: AppTextStyles.bodySmall
                           .copyWith(color: AppColors.textMuted),
                       filled: true,
                       fillColor: AppColors.backgroundCard,
-                      prefixIcon:
-                          Icon(Icons.search, color: AppColors.textMuted),
+                      prefixIcon: Icon(Icons.search,
+                          color: AppColors.textMuted),
                       suffixIcon: IconButton(
-                        icon: Icon(Icons.clear, color: AppColors.textMuted),
+                        icon: Icon(Icons.clear,
+                            color: AppColors.textMuted),
                         onPressed: () {
                           vm.searchController.clear();
                           vm.onSearch('');
                         },
                       ),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.full),
+                        borderRadius:
+                            BorderRadius.circular(AppRadius.full),
                         borderSide: BorderSide.none,
                       ),
                       contentPadding: const EdgeInsets.symmetric(
@@ -130,53 +118,55 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
-                  // Tabs
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: vm.tabs.map((tab) {
-                        final isSelected = vm.selectedTab == tab;
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              vm.selectTab(tab);
-                            });
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            margin:
-                                const EdgeInsets.only(right: AppSpacing.sm),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.md,
-                              vertical: AppSpacing.sm,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? AppColors.primary
-                                  : Colors.transparent,
-                              borderRadius:
-                                  BorderRadius.circular(AppRadius.full),
-                              border: Border.all(
-                                color: isSelected
-                                    ? AppColors.primary
-                                    : AppColors.border,
-                                width: 1.5,
+                    child: StatefulBuilder(
+                      builder: (context, setInner) {
+                        return Row(
+                          children: vm.tabs.map((tab) {
+                            final isSelected = vm.selectedTab == tab;
+                            return GestureDetector(
+                              onTap: () {
+                                setInner(() => vm.selectTab(tab));
+                              },
+                              child: AnimatedContainer(
+                                duration:
+                                    const Duration(milliseconds: 200),
+                                margin: const EdgeInsets.only(
+                                    right: AppSpacing.sm),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: AppSpacing.md,
+                                  vertical: AppSpacing.sm,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? AppColors.primary
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(
+                                      AppRadius.full),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? AppColors.primary
+                                        : AppColors.border,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: Text(
+                                  tab,
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: isSelected
+                                        ? AppColors.background
+                                        : AppColors.text,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w600
+                                        : FontWeight.w400,
+                                  ),
+                                ),
                               ),
-                            ),
-                            child: Text(
-                              tab,
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: isSelected
-                                    ? AppColors.background
-                                    : AppColors.text,
-                                fontWeight: isSelected
-                                    ? FontWeight.w600
-                                    : FontWeight.w400,
-                              ),
-                            ),
-                          ),
+                            );
+                          }).toList(),
                         );
-                      }).toList(),
+                      },
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
@@ -238,10 +228,7 @@ class _SearchResultCard extends StatelessWidget {
   final SearchResult result;
   final VoidCallback onTap;
 
-  const _SearchResultCard({
-    required this.result,
-    required this.onTap,
-  });
+  const _SearchResultCard({required this.result, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -299,7 +286,8 @@ class _SearchResultCard extends StatelessWidget {
                         horizontal: AppSpacing.sm, vertical: 2),
                     decoration: BoxDecoration(
                       color: _getTypeColor(result.type),
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                      borderRadius:
+                          BorderRadius.circular(AppRadius.sm),
                     ),
                     child: Text(
                       result.type.toUpperCase(),

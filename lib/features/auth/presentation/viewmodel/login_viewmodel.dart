@@ -1,42 +1,41 @@
 import 'package:flutter/material.dart';
 import '../../domain/usecases/login_usecase.dart';
-import '../../domain/repositories/auth_repository.dart';
-import '../../data/repositories/auth_repository_impl.dart';
-import '../../data/datasources/auth_remote_datasource.dart';
-import '../../../../core/storage/session_manager.dart';
 
+// El ViewModel solo conoce el UseCase — no sabe nada de repositorios ni datasources.
+// Las dependencias se inyectan desde afuera (constructor injection).
 class LoginViewModel extends ChangeNotifier {
+  final LoginUseCase _loginUseCase;
+
+  LoginViewModel({required LoginUseCase loginUseCase})
+      : _loginUseCase = loginUseCase;
+
   final emailController = TextEditingController();
   final passController = TextEditingController();
 
-  late final LoginUseCase _loginUseCase;
-
   String errorMessage = '';
-
-  LoginViewModel() {
-    // Inyección manual de dependencias
-    final AuthRemoteDataSource remote = AuthRemoteDataSource();
-    final AuthRepository repository = AuthRepositoryImpl(remote);
-    _loginUseCase = LoginUseCase(repository);
-  }
+  bool isLoading = false;
 
   Future<bool> login() async {
-    if (emailController.text.isEmpty ||
-        passController.text.isEmpty) {
+    if (emailController.text.trim().isEmpty ||
+        passController.text.trim().isEmpty) {
       errorMessage = 'Todos los campos son obligatorios';
       notifyListeners();
       return false;
     }
 
+    isLoading = true;
+    errorMessage = '';
+    notifyListeners();
+
     final token = await _loginUseCase(
-      emailController.text,
+      emailController.text.trim(),
       passController.text,
     );
 
+    isLoading = false;
+
     if (token != null && token.isNotEmpty) {
-      // Guardar el token en SessionManager
-      await SessionManager.saveToken(token);
-      print('Token guardado: $token');
+      notifyListeners();
       return true;
     } else {
       errorMessage = 'Credenciales inválidas';

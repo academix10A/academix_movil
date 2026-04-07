@@ -11,19 +11,3 @@ class TemaEntity {
     this.subtemas = const [],
   });
 }
-
-class TemaResourceEntity {
-  final int id;
-  final String titulo;
-  final String descripcion;
-  final String tema;
-  final String subtema;
-
-  TemaResourceEntity({
-    required this.id,
-    required this.titulo,
-    required this.descripcion,
-    required this.tema,
-    required this.subtema,
-  });
-}
