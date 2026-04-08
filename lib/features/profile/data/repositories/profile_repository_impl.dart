@@ -1,5 +1,6 @@
 import '../../domain/repositories/profile_repository.dart';
 import '../../domain/entities/profile_entity.dart';
+import '../../domain/entities/membresia_entity.dart';
 import '../datasources/profile_remote_datasource.dart';
 
 class ProfileRepositoryImpl implements ProfileRepository {
@@ -47,5 +48,24 @@ class ProfileRepositoryImpl implements ProfileRepository {
   Future<int> getNoteCount() {
     return remote.getNoteCount();
   }
-}
 
+  @override
+  Future<List<Membresia>> getMembresias() {
+    return remote.getMembresias();
+  }
+
+  @override
+  Future<void> activarMembresia(int idMembresia) {
+    return remote.activarMembresia(idMembresia);
+  }
+
+  @override
+  Future<Map<String, dynamic>> createPaypalOrder(int idMembresia) {
+    return remote.createPaypalOrder(idMembresia);
+  }
+
+  @override
+  Future<void> capturePaypalOrder(String orderId, int idMembresia) {
+    return remote.capturePaypalOrder(orderId, idMembresia);
+  }
+}

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../data/datasources/profile_remote_datasource.dart';
 import '../../domain/entities/membresia_entity.dart';
+import '../../domain/usecases/membresia_usecases.dart';
 
 class MembresiaViewModel extends ChangeNotifier {
-  final ProfileRemoteDataSource _dataSource = ProfileRemoteDataSource();
+  final GetMembresiasUseCase _getMembresias;
+
+  MembresiaViewModel({required GetMembresiasUseCase getMembresias})
+      : _getMembresias = getMembresias;
 
   List<Membresia> _membresias = [];
   bool _isLoading = false;
@@ -18,7 +21,7 @@ class MembresiaViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _membresias = await _dataSource.getMembresias();
+      _membresias = await _getMembresias();
     } catch (e) {
       _error = 'Error al cargar membresías';
     } finally {

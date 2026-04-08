@@ -2,12 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:academix/core/themes/app_colors.dart';
 import 'package:academix/features/profile/domain/entities/membresia_entity.dart';
+import 'package:academix/features/profile/domain/usecases/membresia_usecases.dart';
 import 'package:academix/features/profile/presentation/viewmodel/membresia_viewmodel.dart';
 import 'package:academix/features/profile/presentation/viewmodel/profile_viewmodel.dart';
 import 'package:academix/features/profile/presentation/widgets/paypal_webview.dart';
 
 class PremiumScreen extends StatefulWidget {
-  const PremiumScreen({super.key});
+  final MembresiaViewModel membresiaVm;
+  final ProfileViewModel profileVm;
+  final CreatePaypalOrderUseCase createPaypalOrder;
+  final CapturePaypalOrderUseCase capturePaypalOrder;
+  final ActivarMembresiaUseCase activarMembresia;
+
+  const PremiumScreen({
+    super.key,
+    required this.membresiaVm,
+    required this.profileVm,
+    required this.createPaypalOrder,
+    required this.capturePaypalOrder,
+    required this.activarMembresia,
+  });
 
   @override
   State<PremiumScreen> createState() => _PremiumScreenState();
@@ -15,9 +29,6 @@ class PremiumScreen extends StatefulWidget {
 
 class _PremiumScreenState extends State<PremiumScreen>
     with TickerProviderStateMixin {
-  final MembresiaViewModel _membresiaVm = MembresiaViewModel();
-  final ProfileViewModel _profileVm = ProfileViewModel();
-
   Membresia? _selectedPlan;
   bool _showSuccess = false;
   bool _isPaying = false;
@@ -25,46 +36,30 @@ class _PremiumScreenState extends State<PremiumScreen>
   late AnimationController _successController;
   late AnimationController _buttonController;
   late Animation<double> _buttonScale;
-  late Animation<double> _successScale;
-  late Animation<double> _successOpacity;
 
   @override
   void initState() {
     super.initState();
 
     _successController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
+        vsync: this, duration: const Duration(milliseconds: 600));
     _buttonController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
+        vsync: this, duration: const Duration(milliseconds: 300));
 
-    _buttonScale = CurvedAnimation(
-      parent: _buttonController,
-      curve: Curves.elasticOut,
-    );
-    _successScale = Tween<double>(begin: 0.5, end: 1.0).animate(
-      CurvedAnimation(parent: _successController, curve: Curves.elasticOut),
-    );
-    _successOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _successController, curve: Curves.easeIn),
-    );
+    _buttonScale =
+        CurvedAnimation(parent: _buttonController, curve: Curves.elasticOut);
 
-    _profileVm.loadProfileData();
-    _membresiaVm.addListener(() {
+    widget.profileVm.loadProfileData();
+    widget.membresiaVm.addListener(() {
       if (mounted) setState(() {});
     });
-    _membresiaVm.loadMembresias();
+    widget.membresiaVm.loadMembresias();
   }
 
   @override
   void dispose() {
     _successController.dispose();
     _buttonController.dispose();
-    _membresiaVm.dispose();
-    _profileVm.dispose();
     super.dispose();
   }
 
@@ -75,7 +70,7 @@ class _PremiumScreenState extends State<PremiumScreen>
   }
 
   void _onPaymentSuccess() {
-    _profileVm.refreshProfile();
+    widget.profileVm.refreshProfile();
     setState(() => _showSuccess = true);
     _successController.forward();
     HapticFeedback.heavyImpact();
@@ -88,13 +83,12 @@ class _PremiumScreenState extends State<PremiumScreen>
     if (plan.costo == 0) {
       setState(() => _isPaying = true);
       try {
-        await _profileVm.purchaseMembresia(plan);
+        await widget.profileVm.purchaseMembresia(plan);
         _onPaymentSuccess();
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $e')),
-          );
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text('Error: $e')));
         }
       } finally {
         if (mounted) setState(() => _isPaying = false);
@@ -110,10 +104,12 @@ class _PremiumScreenState extends State<PremiumScreen>
           onCancel: () {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Pago cancelado.')),
-              );
+                  const SnackBar(content: Text('Pago cancelado.')));
             }
           },
+          createPaypalOrder: widget.createPaypalOrder,
+          capturePaypalOrder: widget.capturePaypalOrder,
+          activarMembresia: widget.activarMembresia,
         ),
       ),
     );
@@ -127,7 +123,6 @@ class _PremiumScreenState extends State<PremiumScreen>
       backgroundColor: AppColors.background,
       body: Stack(
         children: [
-          // Fondo decorativo
           Positioned(
             top: -60,
             right: -60,
@@ -136,12 +131,10 @@ class _PremiumScreenState extends State<PremiumScreen>
               height: 220,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    const Color(0xFFFFD700).withOpacity(0.12),
-                    Colors.transparent,
-                  ],
-                ),
+                gradient: RadialGradient(colors: [
+                  const Color(0xFFFFD700).withOpacity(0.12),
+                  Colors.transparent,
+                ]),
               ),
             ),
           ),
@@ -150,10 +143,10 @@ class _PremiumScreenState extends State<PremiumScreen>
               children: [
                 _buildHeader(),
                 Expanded(
-                  child: _membresiaVm.isLoading
+                  child: widget.membresiaVm.isLoading
                       ? const Center(child: CircularProgressIndicator())
-                      : _membresiaVm.error != null
-                          ? Center(child: Text(_membresiaVm.error!))
+                      : widget.membresiaVm.error != null
+                          ? Center(child: Text(widget.membresiaVm.error!))
                           : _buildContent(),
                 ),
               ],
@@ -175,14 +168,11 @@ class _PremiumScreenState extends State<PremiumScreen>
             onPressed: () => Navigator.pop(context),
           ),
           const Spacer(),
-          // Badge premium
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
-              ),
+                  colors: [Color(0xFFFFD700), Color(0xFFFFA500)]),
               borderRadius: BorderRadius.circular(20),
             ),
             child: const Row(
@@ -190,15 +180,12 @@ class _PremiumScreenState extends State<PremiumScreen>
               children: [
                 Icon(Icons.workspace_premium, size: 14, color: Colors.white),
                 SizedBox(width: 4),
-                Text(
-                  'PREMIUM',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1,
-                  ),
-                ),
+                Text('PREMIUM',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1)),
               ],
             ),
           ),
@@ -208,7 +195,7 @@ class _PremiumScreenState extends State<PremiumScreen>
   }
 
   Widget _buildContent() {
-    final planes = _membresiaVm.membresias
+    final planes = widget.membresiaVm.membresias
         .where((p) => p.tipo != 'Freemium')
         .toList();
 
@@ -220,31 +207,22 @@ class _PremiumScreenState extends State<PremiumScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Desbloquea\ntu potencial',
-                  style: TextStyle(
-                    color: AppColors.text,
-                    fontSize: 32,
-                    fontWeight: FontWeight.w800,
-                    height: 1.1,
-                    letterSpacing: -0.5,
-                  ),
-                ),
+                Text('Desbloquea\ntu potencial',
+                    style: TextStyle(
+                        color: AppColors.text,
+                        fontSize: 32,
+                        fontWeight: FontWeight.w800,
+                        height: 1.1,
+                        letterSpacing: -0.5)),
                 const SizedBox(height: 8),
-                Text(
-                  'Elige el plan que mejor se adapta a ti',
-                  style: TextStyle(
-                    color: AppColors.textMuted,
-                    fontSize: 15,
-                  ),
-                ),
+                Text('Elige el plan que mejor se adapta a ti',
+                    style:
+                        TextStyle(color: AppColors.textMuted, fontSize: 15)),
                 const SizedBox(height: 28),
               ],
             ),
           ),
         ),
-
-        // Lista de planes
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           sliver: SliverList(
@@ -268,8 +246,6 @@ class _PremiumScreenState extends State<PremiumScreen>
             ),
           ),
         ),
-
-        // Botón animado de pago
         SliverToBoxAdapter(
           child: AnimatedBuilder(
             animation: _buttonScale,
@@ -297,8 +273,6 @@ class _PremiumScreenState extends State<PremiumScreen>
             ),
           ),
         ),
-
-        // FAQ
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
@@ -360,10 +334,9 @@ class _PlanCard extends StatelessWidget {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.25),
-                    blurRadius: 20,
-                    offset: const Offset(0, 6),
-                  ),
+                      color: AppColors.primary.withOpacity(0.25),
+                      blurRadius: 20,
+                      offset: const Offset(0, 6))
                 ]
               : [],
         ),
@@ -371,7 +344,6 @@ class _PlanCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Radio visual
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               margin: const EdgeInsets.only(top: 2),
@@ -380,11 +352,10 @@ class _PlanCard extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isSelected
-                      ? AppColors.primary
-                      : Colors.white.withOpacity(0.3),
-                  width: 2,
-                ),
+                    color: isSelected
+                        ? AppColors.primary
+                        : Colors.white.withOpacity(0.3),
+                    width: 2),
                 color: isSelected ? AppColors.primary : Colors.transparent,
               ),
               child: isSelected
@@ -392,70 +363,57 @@ class _PlanCard extends StatelessWidget {
                   : null,
             ),
             const SizedBox(width: 14),
-
-            // Info del plan
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Text(
-                        plan.tipo,
-                        style: TextStyle(
-                          color: AppColors.text,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
+                      Text(plan.tipo,
+                          style: TextStyle(
+                              color: AppColors.text,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700)),
                       if (isPopular) ...[
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
-                            ),
+                            gradient: const LinearGradient(colors: [
+                              Color(0xFFFFD700),
+                              Color(0xFFFFA500)
+                            ]),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Text(
-                            'Popular',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
+                          child: const Text('Popular',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700)),
                         ),
                       ],
                     ],
                   ),
                   const SizedBox(height: 4),
-                  // Beneficios
                   ...plan.beneficios.take(3).map(
                         (b) => Padding(
                           padding: const EdgeInsets.only(top: 4),
                           child: Row(
                             children: [
-                              Icon(
-                                Icons.check_circle_outline_rounded,
-                                size: 13,
-                                color: isSelected
-                                    ? AppColors.primary
-                                    : AppColors.textMuted,
-                              ),
+                              Icon(Icons.check_circle_outline_rounded,
+                                  size: 13,
+                                  color: isSelected
+                                      ? AppColors.primary
+                                      : AppColors.textMuted),
                               const SizedBox(width: 5),
                               Expanded(
-                                child: Text(
-                                  b.nombre,
-                                  style: TextStyle(
-                                    color: AppColors.textMuted,
-                                    fontSize: 12,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
+                                child: Text(b.nombre,
+                                    style: TextStyle(
+                                        color: AppColors.textMuted,
+                                        fontSize: 12),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis),
                               ),
                             ],
                           ),
@@ -464,45 +422,31 @@ class _PlanCard extends StatelessWidget {
                 ],
               ),
             ),
-
-            // Precio
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 RichText(
-                  text: TextSpan(
-                    children: [
-                      TextSpan(
+                  text: TextSpan(children: [
+                    TextSpan(
                         text: '\$',
                         style: TextStyle(
-                          color: isSelected
-                              ? AppColors.primary
-                              : AppColors.text,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      TextSpan(
+                            color:
+                                isSelected ? AppColors.primary : AppColors.text,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600)),
+                    TextSpan(
                         text: '${plan.costo}',
                         style: TextStyle(
-                          color: isSelected
-                              ? AppColors.primary
-                              : AppColors.text,
-                          fontSize: 26,
-                          fontWeight: FontWeight.w800,
-                          height: 1,
-                        ),
-                      ),
-                    ],
-                  ),
+                            color:
+                                isSelected ? AppColors.primary : AppColors.text,
+                            fontSize: 26,
+                            fontWeight: FontWeight.w800,
+                            height: 1)),
+                  ]),
                 ),
-                Text(
-                  '/${plan.tipo.toLowerCase()}',
-                  style: TextStyle(
-                    color: AppColors.textMuted,
-                    fontSize: 11,
-                  ),
-                ),
+                Text('/${plan.tipo.toLowerCase()}',
+                    style:
+                        TextStyle(color: AppColors.textMuted, fontSize: 11)),
               ],
             ),
           ],
@@ -519,16 +463,12 @@ class _PayButton extends StatelessWidget {
   final bool isPaying;
   final VoidCallback onTap;
 
-  const _PayButton({
-    required this.plan,
-    required this.isPaying,
-    required this.onTap,
-  });
+  const _PayButton(
+      {required this.plan, required this.isPaying, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final isFree = plan?.costo == 0;
-
     return GestureDetector(
       onTap: isPaying ? null : onTap,
       child: AnimatedContainer(
@@ -537,22 +477,21 @@ class _PayButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 18),
         decoration: BoxDecoration(
           gradient: isFree
-              ? LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
-                )
+              ? LinearGradient(colors: [
+                  AppColors.primary,
+                  AppColors.primary.withOpacity(0.8)
+                ])
               : const LinearGradient(
                   colors: [Color(0xFF0070BA), Color(0xFF003087)],
                   begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                  end: Alignment.bottomRight),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: (isFree ? AppColors.primary : const Color(0xFF0070BA))
-                  .withOpacity(0.35),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
+                color: (isFree ? AppColors.primary : const Color(0xFF0070BA))
+                    .withOpacity(0.35),
+                blurRadius: 16,
+                offset: const Offset(0, 6))
           ],
         ),
         child: Center(
@@ -561,30 +500,24 @@ class _PayButton extends StatelessWidget {
                   width: 22,
                   height: 22,
                   child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    color: Colors.white,
-                  ),
-                )
+                      strokeWidth: 2.5, color: Colors.white))
               : Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      isFree ? Icons.bolt_rounded : Icons.payment_rounded,
-                      color: Colors.white,
-                      size: 20,
-                    ),
+                        isFree ? Icons.bolt_rounded : Icons.payment_rounded,
+                        color: Colors.white,
+                        size: 20),
                     const SizedBox(width: 8),
                     Text(
-                      isFree
-                          ? 'Activar gratis'
-                          : 'Pagar \$${plan?.costo} con PayPal',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.2,
-                      ),
-                    ),
+                        isFree
+                            ? 'Activar gratis'
+                            : 'Pagar \$${plan?.costo} con PayPal',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.2)),
                   ],
                 ),
         ),
@@ -598,7 +531,6 @@ class _PayButton extends StatelessWidget {
 class _FaqTile extends StatefulWidget {
   final String question;
   final String answer;
-
   const _FaqTile({required this.question, required this.answer});
 
   @override
@@ -627,23 +559,16 @@ class _FaqTileState extends State<_FaqTile> {
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    widget.question,
-                    style: TextStyle(
-                      color: AppColors.text,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+                    child: Text(widget.question,
+                        style: TextStyle(
+                            color: AppColors.text,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600))),
                 AnimatedRotation(
                   turns: _open ? 0.25 : 0,
                   duration: const Duration(milliseconds: 200),
-                  child: Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 13,
-                    color: AppColors.textMuted,
-                  ),
+                  child: Icon(Icons.arrow_forward_ios_rounded,
+                      size: 13, color: AppColors.textMuted),
                 ),
               ],
             ),
@@ -651,14 +576,9 @@ class _FaqTileState extends State<_FaqTile> {
               firstChild: const SizedBox.shrink(),
               secondChild: Padding(
                 padding: const EdgeInsets.only(top: 10),
-                child: Text(
-                  widget.answer,
-                  style: TextStyle(
-                    color: AppColors.textMuted,
-                    fontSize: 13,
-                    height: 1.5,
-                  ),
-                ),
+                child: Text(widget.answer,
+                    style: TextStyle(
+                        color: AppColors.textMuted, fontSize: 13, height: 1.5)),
               ),
               crossFadeState:
                   _open ? CrossFadeState.showSecond : CrossFadeState.showFirst,
@@ -675,7 +595,6 @@ class _FaqTileState extends State<_FaqTile> {
 
 class _SuccessView extends StatefulWidget {
   final VoidCallback onDone;
-
   const _SuccessView({required this.onDone});
 
   @override
@@ -692,13 +611,10 @@ class _SuccessViewState extends State<_SuccessView>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 700),
-    )..forward();
-
+        vsync: this, duration: const Duration(milliseconds: 700))
+      ..forward();
     _scale = Tween<double>(begin: 0.6, end: 1.0).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.elasticOut),
-    );
+        CurvedAnimation(parent: _ctrl, curve: Curves.elasticOut));
     _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeIn);
   }
 
@@ -729,47 +645,35 @@ class _SuccessViewState extends State<_SuccessView>
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: const LinearGradient(
-                          colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                            colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFFFFD700).withOpacity(0.4),
-                            blurRadius: 30,
-                            spreadRadius: 5,
-                          ),
+                              color: const Color(0xFFFFD700).withOpacity(0.4),
+                              blurRadius: 30,
+                              spreadRadius: 5)
                         ],
                       ),
-                      child: const Icon(
-                        Icons.workspace_premium_rounded,
-                        size: 54,
-                        color: Colors.white,
-                      ),
+                      child: const Icon(Icons.workspace_premium_rounded,
+                          size: 54, color: Colors.white),
                     ),
                   ),
                   const SizedBox(height: 32),
-                  Text(
-                    '¡Bienvenido\na Premium!',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: AppColors.text,
-                      fontSize: 34,
-                      fontWeight: FontWeight.w800,
-                      height: 1.1,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
+                  Text('¡Bienvenido\na Premium!',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          color: AppColors.text,
+                          fontSize: 34,
+                          fontWeight: FontWeight.w800,
+                          height: 1.1,
+                          letterSpacing: -0.5)),
                   const SizedBox(height: 12),
                   Text(
-                    'Tu membresía está activa.\nYa tienes acceso a todo el contenido.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: AppColors.textMuted,
-                      fontSize: 15,
-                      height: 1.5,
-                    ),
-                  ),
+                      'Tu membresía está activa.\nYa tienes acceso a todo el contenido.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          color: AppColors.textMuted, fontSize: 15, height: 1.5)),
                   const SizedBox(height: 48),
                   GestureDetector(
                     onTap: widget.onDone,
@@ -778,27 +682,21 @@ class _SuccessViewState extends State<_SuccessView>
                       padding: const EdgeInsets.symmetric(vertical: 18),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
-                        ),
+                            colors: [Color(0xFFFFD700), Color(0xFFFFA500)]),
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFFFFD700).withOpacity(0.3),
-                            blurRadius: 16,
-                            offset: const Offset(0, 6),
-                          ),
+                              color: const Color(0xFFFFD700).withOpacity(0.3),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6))
                         ],
                       ),
                       child: const Center(
-                        child: Text(
-                          'Ir al perfil',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
+                          child: Text('Ir al perfil',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700))),
                     ),
                   ),
                 ],

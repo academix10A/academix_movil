@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:academix/core/routes/app_routes.dart';
 import 'package:academix/features/note/domain/entities/note_entity.dart';
-import 'package:academix/features/note/data/datasources/note_remote_datasource.dart';
+import 'package:academix/features/note/domain/usecases/note_usecases.dart';
 import 'package:academix/features/library/data/models/library_resource_ui_model.dart';
 
 enum NoteFilter {
@@ -46,7 +46,6 @@ class NoteItem {
 
   bool get hasResource => resource != null;
 
-  // Mapper desde entity
   factory NoteItem.fromEntity(NoteEntity entity) {
     return NoteItem(
       id: entity.idNota.toString(),
@@ -58,38 +57,51 @@ class NoteItem {
       tags: entity.tags,
       isShared: entity.isShared,
       resource: entity.recurso != null
-        ? LibraryResource.fromEntity(entity.recurso!)
-        : null,
+          ? LibraryResource.fromEntity(entity.recurso!)
+          : null,
     );
   }
 }
 
+/// ViewModel del listado de notas.
+/// Recibe use cases por constructor (inyectados desde NoteDI).
+/// NUNCA instancia datasources ni repositorios directamente.
 class NotesViewModel {
-  final TextEditingController searchController = TextEditingController();
-  final ValueNotifier<NoteFilter> selectedFilter =
-      ValueNotifier<NoteFilter>(NoteFilter.todos);
-  final ValueNotifier<List<NoteItem>> filteredNotes =
-      ValueNotifier<List<NoteItem>>([]);
+  final GetNotesUseCase _getNotesUseCase;
+  final CreateNoteUseCase _createNoteUseCase;
+  final UpdateNoteUseCase _updateNoteUseCase;
+  final DeleteNoteUseCase _deleteNoteUseCase;
 
-  final ValueNotifier<bool> isLoading = ValueNotifier<bool>(false);
-  final ValueNotifier<String?> errorMessage = ValueNotifier<String?>(null);
-
-  final NoteRemoteDataSource _remoteDataSource = NoteRemoteDataSource();
-  List<NoteItem> _allNotes = [];
-
-  NotesViewModel() {
+  NotesViewModel({
+    required GetNotesUseCase getNotesUseCase,
+    required CreateNoteUseCase createNoteUseCase,
+    required UpdateNoteUseCase updateNoteUseCase,
+    required DeleteNoteUseCase deleteNoteUseCase,
+  })  : _getNotesUseCase = getNotesUseCase,
+        _createNoteUseCase = createNoteUseCase,
+        _updateNoteUseCase = updateNoteUseCase,
+        _deleteNoteUseCase = deleteNoteUseCase {
     searchController.addListener(_applyFilters);
     selectedFilter.addListener(_applyFilters);
     loadNotes();
   }
 
+  final TextEditingController searchController = TextEditingController();
+  final ValueNotifier<NoteFilter> selectedFilter =
+      ValueNotifier<NoteFilter>(NoteFilter.todos);
+  final ValueNotifier<List<NoteItem>> filteredNotes =
+      ValueNotifier<List<NoteItem>>([]);
+  final ValueNotifier<bool> isLoading = ValueNotifier<bool>(false);
+  final ValueNotifier<String?> errorMessage = ValueNotifier<String?>(null);
+
+  List<NoteItem> _allNotes = [];
+
   Future<void> loadNotes() async {
     isLoading.value = true;
     errorMessage.value = null;
-    
     try {
-      final entities = await _remoteDataSource.getNotes();
-      _allNotes = entities.map((e) => NoteItem.fromEntity(e)).toList();
+      final entities = await _getNotesUseCase();
+      _allNotes = entities.map(NoteItem.fromEntity).toList();
       _applyFilters();
     } catch (e) {
       errorMessage.value = 'Error al cargar notas: $e';
@@ -99,12 +111,16 @@ class NotesViewModel {
     }
   }
 
-  Future<void> createNote(String titulo, String contenido, {int? idRecurso, bool esCompartida = false}) async {
+  Future<void> createNote(
+    String titulo,
+    String contenido, {
+    int? idRecurso,
+    bool esCompartida = false,
+  }) async {
     isLoading.value = true;
     errorMessage.value = null;
-    
     try {
-      await _remoteDataSource.createNote(
+      await _createNoteUseCase(
         titulo: titulo,
         contenido: contenido,
         idRecurso: idRecurso,
@@ -118,12 +134,16 @@ class NotesViewModel {
     }
   }
 
-  Future<void> updateNote(int id, String titulo, String contenido, {bool esCompartida = false}) async {
+  Future<void> updateNote(
+    int id,
+    String titulo,
+    String contenido, {
+    bool esCompartida = false,
+  }) async {
     isLoading.value = true;
     errorMessage.value = null;
-    
     try {
-      await _remoteDataSource.updateNote(
+      await _updateNoteUseCase(
         id: id,
         titulo: titulo,
         contenido: contenido,
@@ -140,9 +160,8 @@ class NotesViewModel {
   Future<void> deleteNote(int id) async {
     isLoading.value = true;
     errorMessage.value = null;
-    
     try {
-      await _remoteDataSource.deleteNote(id);
+      await _deleteNoteUseCase(id);
       await loadNotes();
     } catch (e) {
       errorMessage.value = 'Error al eliminar nota: $e';
@@ -161,7 +180,6 @@ class NotesViewModel {
         NoteFilter.privadas => !note.isShared,
         NoteFilter.compartidas => note.isShared,
       };
-
       final matchesQuery = query.isEmpty ||
           note.title.toLowerCase().contains(query) ||
           note.preview.toLowerCase().contains(query) ||
@@ -171,20 +189,12 @@ class NotesViewModel {
     }).toList();
   }
 
-  void selectFilter(NoteFilter filter) {
-    selectedFilter.value = filter;
-  }
+  void selectFilter(NoteFilter filter) => selectedFilter.value = filter;
 
-  void onSearch(String query) {
-    _applyFilters();
-  }
+  void onSearch(String _) => _applyFilters();
 
   void onNoteTap(BuildContext context, NoteItem note) {
-    AppNavigator.push(
-      context,
-      AppRoutes.noteDetail,
-      arguments: note,
-    );
+    AppNavigator.push(context, AppRoutes.noteDetail, arguments: note);
   }
 
   void dispose() {
@@ -195,4 +205,3 @@ class NotesViewModel {
     errorMessage.dispose();
   }
 }
-

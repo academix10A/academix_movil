@@ -1,19 +1,17 @@
 import '../../../../core/network/dio_client.dart';
 import '../../domain/entities/note_entity.dart';
+import '../models/note_model.dart';
 
 class NoteRemoteDataSource {
   Future<List<NoteEntity>> getNotes() async {
     final response = await DioClient.dio.get('/notas/usuario');
-
     final List data = response.data;
-
-    return data.map((e) => NoteEntity.fromJson(e)).toList();
+    return data.map((e) => NoteModel.fromJson(e).toEntity()).toList();
   }
 
   Future<NoteEntity> getNoteById(int id) async {
     final response = await DioClient.dio.get('/notas/$id');
-
-    return NoteEntity.fromJson(response.data);
+    return NoteModel.fromJson(response.data).toEntity();
   }
 
   Future<NoteEntity> createNote({
@@ -28,8 +26,7 @@ class NoteRemoteDataSource {
       'id_recurso': idRecurso,
       'es_compartida': esCompartida,
     });
-
-    return NoteEntity.fromJson(response.data);
+    return NoteModel.fromJson(response.data).toEntity();
   }
 
   Future<NoteEntity> updateNote({
@@ -43,8 +40,7 @@ class NoteRemoteDataSource {
       'contenido': contenido,
       'es_compartida': esCompartida,
     });
-
-    return NoteEntity.fromJson(response.data);
+    return NoteModel.fromJson(response.data).toEntity();
   }
 
   Future<void> deleteNote(int id) async {
@@ -52,10 +48,9 @@ class NoteRemoteDataSource {
   }
 
   Future<List<NoteEntity>> getSharedNotesByResource(int idRecurso) async {
-    final response = await DioClient.dio.get('/notas/recurso/$idRecurso/compartidas');
+    final response =
+        await DioClient.dio.get('/notas/recurso/$idRecurso/compartidas');
     final List data = response.data['notas'] as List;
-    return data.map((e) => NoteEntity.fromJson(e)).toList();
+    return data.map((e) => NoteModel.fromJson(e).toEntity()).toList();
   }
 }
-
-

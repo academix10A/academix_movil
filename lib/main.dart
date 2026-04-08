@@ -23,6 +23,7 @@ import 'features/home/presentation/view/offline_content_screen.dart';
 import 'features/library/presentation/view/search_screen.dart';
 import 'features/library/presentation/view/ai_chat_screen.dart';
 import 'features/exam/presentation/view/exam_history_screen.dart';
+import 'features/profile/profile_di.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -84,9 +85,20 @@ class MyApp extends StatelessWidget {
               ),
             );
           case AppRoutes.settings:
-            return MaterialPageRoute(builder: (_) => const SettingsScreen());
+            return MaterialPageRoute(
+              builder: (_) =>
+                  SettingsScreen(vm: ProfileDI.settingsViewModel),
+            );
           case AppRoutes.premium:
-            return MaterialPageRoute(builder: (_) => const PremiumScreen());
+            return MaterialPageRoute(
+              builder: (_) => PremiumScreen(
+                membresiaVm: ProfileDI.membresiaViewModel,
+                profileVm: ProfileDI.profileViewModel,
+                createPaypalOrder: ProfileDI.createPaypalOrder,
+                capturePaypalOrder: ProfileDI.capturePaypalOrder,
+                activarMembresia: ProfileDI.activarMembresia,
+              ),
+            );
           case AppRoutes.register:
             return MaterialPageRoute(builder: (_) => const RegisterScreen());
           case AppRoutes.forgotPassword:
