@@ -3,12 +3,11 @@ import 'package:academix/core/constants/app_spacing.dart';
 import 'package:academix/core/themes/app_text_styles.dart';
 import 'package:academix/core/themes/app_colors.dart';
 import 'package:academix/core/constants/app_radius.dart';
+import 'package:academix/features/note/presentation/di/note_di.dart';
 import 'package:academix/features/note/presentation/viewmodel/create_note_viewmodel.dart';
 import '../widgets/select_resource_bottomsheet.dart';
 
 class CreateNoteScreen extends StatefulWidget {
-  /// Si viene desde un libro, pasa el id y título del recurso.
-  /// Cuando están presentes el recurso se muestra bloqueado (no se puede quitar).
   final int? preselectedResourceId;
   final String? preselectedResourceTitle;
 
@@ -23,16 +22,16 @@ class CreateNoteScreen extends StatefulWidget {
 }
 
 class _CreateNoteScreenState extends State<CreateNoteScreen> {
-  final CreateNoteViewModel vm = CreateNoteViewModel();
+  // ViewModel inyectado desde DI, no instanciado a mano.
+  late final CreateNoteViewModel vm;
 
-  /// True cuando la pantalla fue abierta desde un libro (recurso bloqueado).
   bool get _hasLockedResource => widget.preselectedResourceId != null;
 
   @override
   void initState() {
     super.initState();
+    vm = NoteDI.createNoteViewModel();
     if (_hasLockedResource) {
-      // Preselecciona el recurso sin permitir modificarlo.
       vm.setSelectedResource(
         widget.preselectedResourceId,
         widget.preselectedResourceTitle,
@@ -94,7 +93,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Título ──────────────────────────────────────────────────
+              // Título
               TextField(
                 controller: vm.titleController,
                 style: AppTextStyles.h1.copyWith(
@@ -114,44 +113,44 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
               ),
               const SizedBox(height: AppSpacing.xl),
 
-              // ── Toggle pública ──────────────────────────────────────────
-              Row(
-                children: [
-                  Switch(
-                    value: vm.isPublic,
-                    onChanged: (_) => vm.togglePublic(),
-                    activeColor: AppColors.primary,
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Nota pública",
-                        style: AppTextStyles.body.copyWith(
-                          color: AppColors.text,
-                          fontWeight: FontWeight.w600,
+              // Toggle pública
+              ListenableBuilder(
+                listenable: vm,
+                builder: (context, _) => Row(
+                  children: [
+                    Switch(
+                      value: vm.isPublic,
+                      onChanged: (_) => vm.togglePublic(),
+                      activeColor: AppColors.primary,
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Nota pública",
+                          style: AppTextStyles.body.copyWith(
+                            color: AppColors.text,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                      Text(
-                        vm.isPublic
-                            ? "Otros usuarios podrán verla"
-                            : "Solo tú podrás verla",
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.textMuted,
+                        Text(
+                          vm.isPublic
+                              ? "Otros usuarios podrán verla"
+                              : "Solo tú podrás verla",
+                          style: AppTextStyles.bodySmall
+                              .copyWith(color: AppColors.textMuted),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: AppSpacing.lg),
 
-              // ── Recurso ─────────────────────────────────────────────────
+              // Recurso
               Text(
-                _hasLockedResource
-                    ? "Recurso vinculado"
-                    : "Recurso (opcional)",
+                _hasLockedResource ? "Recurso vinculado" : "Recurso (opcional)",
                 style: AppTextStyles.bodySmall.copyWith(
                   color: AppColors.text,
                   fontWeight: FontWeight.w500,
@@ -160,10 +159,9 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
               const SizedBox(height: AppSpacing.sm),
 
               if (_hasLockedResource)
-                // Recurso bloqueado: muestra badge sin botón de quitar
-                _LockedResourceBadge(title: widget.preselectedResourceTitle ?? '')
+                _LockedResourceBadge(
+                    title: widget.preselectedResourceTitle ?? '')
               else
-                // Recurso libre: puede seleccionar o quitar
                 ValueListenableBuilder<bool>(
                   valueListenable: vm.hasResource,
                   builder: (context, hasResource, _) =>
@@ -177,15 +175,12 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                             onSelected: (id, resourceTitle) =>
                                 vm.setSelectedResource(id, resourceTitle),
                           ),
-                          icon: Icon(
-                            Icons.menu_book,
-                            size: 20,
-                            color: AppColors.primary,
-                          ),
+                          icon: Icon(Icons.menu_book,
+                              size: 20, color: AppColors.primary),
                           label: const Text('Seleccionar recurso'),
                           style: OutlinedButton.styleFrom(
-                            side: BorderSide(
-                                color: AppColors.primary, width: 1.5),
+                            side:
+                                BorderSide(color: AppColors.primary, width: 1.5),
                             shape: RoundedRectangleBorder(
                               borderRadius:
                                   BorderRadius.circular(AppRadius.full),
@@ -202,8 +197,8 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                               color: AppColors.accent.withOpacity(0.1),
                               borderRadius:
                                   BorderRadius.circular(AppRadius.full),
-                              border: Border.all(
-                                  color: AppColors.accent, width: 1),
+                              border:
+                                  Border.all(color: AppColors.accent, width: 1),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -227,8 +222,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                           ),
                           const SizedBox(width: AppSpacing.xs),
                           IconButton(
-                            onPressed: () =>
-                                vm.setSelectedResource(null, null),
+                            onPressed: () => vm.setSelectedResource(null, null),
                             icon: Icon(Icons.close,
                                 size: 16, color: AppColors.textMuted),
                             padding: EdgeInsets.zero,
@@ -242,7 +236,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
 
               const SizedBox(height: AppSpacing.lg),
 
-              // ── Tags ─────────────────────────────────────────────────────
+              // Etiquetas
               Text(
                 "Etiquetas (opcional)",
                 style: AppTextStyles.bodySmall.copyWith(
@@ -252,71 +246,15 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
               ),
               const SizedBox(height: AppSpacing.sm),
 
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      onSubmitted: vm.addTag,
-                      decoration: InputDecoration(
-                        hintText: "Agregar etiqueta (ej. matemáticas)",
-                        hintStyle: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.textMuted,
-                        ),
-                        filled: true,
-                        fillColor: AppColors.backgroundCard,
-                        border: OutlineInputBorder(
-                          borderRadius:
-                              BorderRadius.circular(AppRadius.full),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.lg,
-                          vertical: AppSpacing.md,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  ElevatedButton(
-                    onPressed: () => vm.addTag('nueva-etiqueta'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      shape: const CircleBorder(),
-                      padding: const EdgeInsets.all(12),
-                    ),
-                    child: const Icon(Icons.add, size: 20),
-                  ),
-                ],
+              _TagInput(
+                onAdd: vm.addTag,
+                tags: vm.tags,
+                onRemove: vm.removeTag,
               ),
-              const SizedBox(height: AppSpacing.md),
 
-              ValueListenableBuilder<List<String>>(
-                valueListenable: vm.tags,
-                builder: (context, tags, _) => Wrap(
-                  spacing: AppSpacing.sm,
-                  runSpacing: AppSpacing.sm,
-                  children: tags
-                      .map(
-                        (tag) => Chip(
-                          label: Text(
-                            tag,
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: AppColors.background,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          backgroundColor: AppColors.primary,
-                          deleteIcon: const Icon(Icons.close,
-                              size: 16, color: Colors.white),
-                          onDeleted: () => vm.removeTag(tag),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ),
               const SizedBox(height: AppSpacing.xl),
 
-              // ── Contenido principal ──────────────────────────────────────
+              // Contenido
               Text(
                 "Contenido",
                 style: AppTextStyles.bodySmall.copyWith(
@@ -333,24 +271,18 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                 decoration: BoxDecoration(
                   color: AppColors.backgroundCard,
                   borderRadius: BorderRadius.circular(AppRadius.md),
-                  border: Border.all(
-                    color: AppColors.border,
-                    width: 1.5,
-                  ),
+                  border: Border.all(color: AppColors.border, width: 1.5),
                 ),
                 child: TextField(
                   controller: vm.contentController,
                   maxLines: null,
                   minLines: 10,
-                  style: AppTextStyles.body.copyWith(
-                    color: AppColors.text,
-                    height: 1.6,
-                  ),
+                  style: AppTextStyles.body
+                      .copyWith(color: AppColors.text, height: 1.6),
                   decoration: InputDecoration(
                     hintText: "Escribe tu nota aquí...",
-                    hintStyle: AppTextStyles.body.copyWith(
-                      color: AppColors.textMuted,
-                    ),
+                    hintStyle:
+                        AppTextStyles.body.copyWith(color: AppColors.textMuted),
                     border: InputBorder.none,
                   ),
                 ),
@@ -359,19 +291,17 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
               ValueListenableBuilder<String?>(
                 valueListenable: vm.errorMessage,
                 builder: (context, error, _) {
-                  if (error != null) {
-                    return Padding(
-                      padding: const EdgeInsets.only(top: AppSpacing.md),
-                      child: Text(
-                        error,
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.error,
-                          fontWeight: FontWeight.bold,
-                        ),
+                  if (error == null) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.md),
+                    child: Text(
+                      error,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.error,
+                        fontWeight: FontWeight.bold,
                       ),
-                    );
-                  }
-                  return const SizedBox.shrink();
+                    ),
+                  );
                 },
               ),
 
@@ -384,11 +314,108 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
   }
 }
 
-// ── Widget auxiliar: badge de recurso bloqueado ────────────────────────────────
+// ── Widgets auxiliares ────────────────────────────────────────────────────────
+
+class _TagInput extends StatefulWidget {
+  final void Function(String) onAdd;
+  final ValueNotifier<List<String>> tags;
+  final void Function(String) onRemove;
+
+  const _TagInput({
+    required this.onAdd,
+    required this.tags,
+    required this.onRemove,
+  });
+
+  @override
+  State<_TagInput> createState() => _TagInputState();
+}
+
+class _TagInputState extends State<_TagInput> {
+  final _controller = TextEditingController();
+
+  void _submit() {
+    widget.onAdd(_controller.text);
+    _controller.clear();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _controller,
+                onSubmitted: (_) => _submit(),
+                decoration: InputDecoration(
+                  hintText: "Agregar etiqueta (ej. matemáticas)",
+                  hintStyle: AppTextStyles.bodySmall
+                      .copyWith(color: AppColors.textMuted),
+                  filled: true,
+                  fillColor: AppColors.backgroundCard,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.full),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                    vertical: AppSpacing.md,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            ElevatedButton(
+              onPressed: _submit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                shape: const CircleBorder(),
+                padding: const EdgeInsets.all(12),
+              ),
+              child: const Icon(Icons.add, size: 20),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.md),
+        ValueListenableBuilder<List<String>>(
+          valueListenable: widget.tags,
+          builder: (context, tags, _) => Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: tags
+                .map(
+                  (tag) => Chip(
+                    label: Text(
+                      tag,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.background,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    backgroundColor: AppColors.primary,
+                    deleteIcon: const Icon(Icons.close,
+                        size: 16, color: Colors.white),
+                    onDeleted: () => widget.onRemove(tag),
+                  ),
+                )
+                .toList(),
+          ),
+        ),
+      ],
+    );
+  }
+}
 
 class _LockedResourceBadge extends StatelessWidget {
   final String title;
-
   const _LockedResourceBadge({required this.title});
 
   @override
@@ -409,11 +436,7 @@ class _LockedResourceBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.menu_book_rounded,
-            size: 16,
-            color: AppColors.primary,
-          ),
+          Icon(Icons.menu_book_rounded, size: 16, color: AppColors.primary),
           const SizedBox(width: 6),
           Flexible(
             child: Text(
@@ -426,12 +449,8 @@ class _LockedResourceBadge extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 6),
-          // Candado — indica que no se puede cambiar
-          Icon(
-            Icons.lock_rounded,
-            size: 14,
-            color: AppColors.primary.withOpacity(0.7),
-          ),
+          Icon(Icons.lock_rounded,
+              size: 14, color: AppColors.primary.withOpacity(0.7)),
         ],
       ),
     );

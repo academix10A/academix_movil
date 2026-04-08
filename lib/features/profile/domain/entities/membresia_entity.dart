@@ -1,3 +1,6 @@
+/// Entidades puras de dominio.
+/// NO tienen fromJson — el parsing JSON ocurre solo en data/models.
+
 class Beneficio {
   final int id;
   final String nombre;
@@ -8,14 +11,6 @@ class Beneficio {
     required this.nombre,
     required this.descripcion,
   });
-
-  factory Beneficio.fromJson(Map<String, dynamic> json) {
-    return Beneficio(
-      id: json['id_beneficio'],
-      nombre: json['nombre'],
-      descripcion: json['descripcion'],
-    );
-  }
 }
 
 class Membresia {
@@ -36,18 +31,4 @@ class Membresia {
     required this.duracionDias,
     required this.beneficios,
   });
-
-  factory Membresia.fromJson(Map<String, dynamic> json) {
-    return Membresia(
-      id: json['id_membresia'],
-      nombre: json['nombre'],
-      descripcion: json['descripcion'],
-      costo: (json['costo'] as num).toDouble(),
-      tipo: json['tipo'],
-      duracionDias: json['duracion_dias'],
-      beneficios: (json['beneficios'] as List)
-          .map((b) => Beneficio.fromJson(b))
-          .toList(),
-    );
-  }
 }
