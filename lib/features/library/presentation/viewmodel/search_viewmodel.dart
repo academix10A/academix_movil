@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:academix/features/library/data/datasources/search_remote_datasource.dart';
+import 'package:academix/core/routes/app_routes.dart';
 
 class SearchResult {
   final String id;
@@ -20,16 +21,18 @@ class SearchResult {
   });
 
   factory SearchResult.fromBackend(Map<String, dynamic> json) {
+    // El backend devuelve: RECURSO | NOTA | PUBLICACION | TEMA
     final String backendTipo =
-        (json['tipo'] as String?)?.toLowerCase() ?? 'recurso';
+        (json['tipo'] as String?)?.toUpperCase() ?? 'RECURSO';
 
     return SearchResult(
       id: json['id'].toString(),
       type: switch (backendTipo) {
-        'recurso' => 'resource',
-        'nota' => 'note',
-        'tema' => 'tema',
-        _ => 'resource',
+        'RECURSO'     => 'resource',
+        'NOTA'        => 'note',
+        'PUBLICACION' => 'publication',
+        'TEMA'        => 'tema',
+        _             => 'resource',
       },
       title: json['titulo'] as String? ?? '',
       preview: json['descripcion'] as String? ?? '',
@@ -44,50 +47,76 @@ class SearchViewModel {
 
   SearchViewModel({required this.searchDataSource});
 
-  final searchResults = ValueNotifier<List<SearchResult>>([]);
-  final isLoading = ValueNotifier<bool>(false);
-  final errorMessage = ValueNotifier<String?>(null);
+  final searchResults    = ValueNotifier<List<SearchResult>>([]);
+  final isLoading        = ValueNotifier<bool>(false);
+  final errorMessage     = ValueNotifier<String?>(null);
   final searchController = TextEditingController();
-  final tabs = <String>['Todos', 'Recursos', 'Notas', 'Temas'];
 
-  String selectedTab = 'Todos';
-  String _selectedTipo = 'all';
+  /// Tabs visibles — "Temas" filtra por subtemas/temas en el backend
+  final tabs = <String>['Todos', 'Recursos', 'Notas', 'Publicaciones', 'Temas'];
+
+  /// ValueNotifier para que los chips se reconstruyan al cambiar tab
+  final selectedTabNotifier = ValueNotifier<String>('Todos');
+
+  String get selectedTab => selectedTabNotifier.value;
+
+  /// Mapeo tab → tipo que entiende el backend
+  String get _selectedTipo => switch (selectedTab) {
+    'Todos'         => 'all',
+    'Recursos'      => 'recursos',
+    'Notas'         => 'notas',
+    'Publicaciones' => 'publicaciones',
+    'Temas'         => 'temas',
+    _               => 'all',
+  };
+
   Timer? _debounceTimer;
 
+  // ── Acciones públicas ─────────────────────────────────────────────────────
+
   void selectTab(String tab) {
-    selectedTab = tab;
-    _selectedTipo = switch (tab) {
-      'Todos' => 'all',
-      'Recursos' => 'recursos',
-      'Notas' => 'notas',
-      'Temas' => 'temas',
-      _ => 'all',
-    };
+    selectedTabNotifier.value = tab;
     _fetchResults();
   }
 
-  Future<void> onSearch(String query) async {
+  void onSearch(String query) {
     _debounceTimer?.cancel();
     _debounceTimer = Timer(
-      const Duration(milliseconds: 500),
+      const Duration(milliseconds: 450),
       () => _fetchResults(query),
     );
   }
 
-  void onResultTap(BuildContext context, SearchResult result) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Abrir ${result.type}: ${result.title}')),
-    );
+  /// Llamado externamente (p.ej. desde didChangeDependencies)
+  Future<void> fetchResults(String query) => _fetchResults(query);
+
+  Future<void> onResultTap(BuildContext context, SearchResult result) async {
+    switch (result.type) {
+      case 'resource':
+        AppNavigator.push(context, AppRoutes.bookDetail, arguments: result);
+        break;
+      case 'note':
+        AppNavigator.push(context, AppRoutes.noteDetailLibrary, arguments: result.id);
+        break;
+      case 'publication':
+        AppNavigator.push(context, AppRoutes.publicationDetail, arguments: result.id);
+        break;
+      case 'tema':
+        AppNavigator.push(context, AppRoutes.temaDetail, arguments: result.id);
+        break;
+      default:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Abrir ${result.type}: ${result.title}')),
+        );
+    }
   }
 
-  Future<void> fetchResults(String query) async {
-    await _fetchResults(query);
-  }
+  // ── Lógica interna ────────────────────────────────────────────────────────
 
   Future<void> _fetchResults([String? query]) async {
     final searchText = query ?? searchController.text;
 
-    if (searchText.length < 2) {
+    if (searchText.trim().isEmpty) {
       searchResults.value = [];
       isLoading.value = false;
       return;
@@ -118,5 +147,6 @@ class SearchViewModel {
     searchResults.dispose();
     isLoading.dispose();
     errorMessage.dispose();
+    selectedTabNotifier.dispose();
   }
 }

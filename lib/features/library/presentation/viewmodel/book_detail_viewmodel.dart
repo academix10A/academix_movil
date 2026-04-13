@@ -44,11 +44,17 @@ class BookDetailViewModel {
   }
 
   Future<void> loadResource(int id) async {
-    isLoading.value = true;
+    // Si ya hay datos precargados, NO mostramos spinner
+    // Solo actualizamos en segundo plano silenciosamente
+    final yaHayDatos = resource.value != null;
+    if (!yaHayDatos) isLoading.value = true;
+
     try {
-      resource.value = await getResourceByIdUseCase(id);
+      final resultado = await getResourceByIdUseCase(id);
+      resource.value = resultado;
     } catch (_) {
-      resource.value = null;
+      // Sin internet: si había datos precargados los conservamos
+      // Si no había nada, resource.value queda null
     } finally {
       isLoading.value = false;
     }

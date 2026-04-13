@@ -1,8 +1,9 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:academix/core/routes/app_routes.dart';
-import 'package:academix/features/exam/domain/entities/exam_entity.dart';
-import 'package:academix/features/exam/data/datasources/exam_remote_datasource.dart';
+import 'package:academix/features/exam/domain/repositories/exam_repository.dart';
+import 'package:academix/features/exam/domain/usecases/get_available_exams_usecase.dart';
+import 'package:academix/features/exam/domain/usecases/get_completed_exams_usecase.dart';
+import 'package:academix/features/exam/data/models/exam_models.dart';
 
 enum ExamFilter {
   disponibles,
@@ -18,102 +19,36 @@ enum ExamFilter {
   }
 }
 
-class ExamItem {
-  final String id;
-  final String title;
-  final String category;
-  final int questions;
-  final int durationMinutes;
-  final String difficulty;
-  final String? subtema;
-
-  const ExamItem({
-    required this.id,
-    required this.title,
-    required this.category,
-    required this.questions,
-    required this.durationMinutes,
-    required this.difficulty,
-    this.subtema,
-  });
-
-  factory ExamItem.fromEntity(ExamEntity entity) {
-    return ExamItem(
-      id: entity.idExamen.toString(),
-      title: entity.titulo,
-      category: entity.nombreCreador ?? 'Examen',
-      questions: entity.cantidadPreguntas,
-      durationMinutes: entity.duracionMinutos,
-      difficulty: entity.difficulty,
-      subtema: entity.nombreSubtema,
-    );
-  }
-}
-
-class CompletedExamItem {
-  final String id;        // id_intento — solo para identificar la card
-  final String examId;    // id_examen  — para poder repetir el examen
-  final String title;
-  final int questions;
-  final String timeAgo;
-  final int score;        // porcentaje 0-100
-  final String grade;
-  final int correctAnswers;
-
-  const CompletedExamItem({
-    required this.id,
-    required this.examId,
-    required this.title,
-    required this.questions,
-    required this.timeAgo,
-    required this.score,
-    required this.grade,
-    required this.correctAnswers,
-  });
-
-  factory CompletedExamItem.fromEntity(CompletedExamEntity entity) {
-    // porcentaje viene del endpoint /detalles (0-100)
-    // calificacion viene en escala 0-10, así que usamos porcentaje si está disponible
-    final scoreValue = (entity.porcentaje != null && entity.porcentaje! > 0)
-        ? entity.porcentaje!.round()
-        : (entity.calificacion * 10).round();
-
-    return CompletedExamItem(
-      id: entity.idIntento.toString(),
-      examId: entity.idExamen.toString(),
-      title: entity.examTitle,
-      questions: entity.cantidadPreguntas,
-      timeAgo: entity.dateCompleted,
-      score: scoreValue,
-      grade: entity.aprobo ? 'APROBADO' : 'REPROBADO',
-      correctAnswers: entity.respuestasCorrectas,
-    );
-  }
-}
-
+/// ViewModel de la pantalla principal de exámenes.
+/// 
+/// Solo depende de UseCases del dominio. No conoce DataSources ni Dio.
+/// Transforma entidades del dominio en modelos de presentación [ExamItemModel].
 class ExamsViewModel {
+  final GetAvailableExamsUseCase _getAvailableExams;
+  final GetDetailedExamsUseCase _getDetailedExams;
+
   final TextEditingController searchController = TextEditingController();
   final ValueNotifier<ExamFilter> selectedFilter =
-      ValueNotifier<ExamFilter>(ExamFilter.disponibles);
-  final ValueNotifier<String?> selectedSubtema = ValueNotifier<String?>(null);
-  final ValueNotifier<List<String>> availableSubtemas =
-      ValueNotifier<List<String>>([]);
+      ValueNotifier(ExamFilter.disponibles);
+  final ValueNotifier<String?> selectedSubtema = ValueNotifier(null);
+  final ValueNotifier<List<String>> availableSubtemas = ValueNotifier([]);
 
-  final ValueNotifier<List<ExamItem>> recommendedExams =
-      ValueNotifier<List<ExamItem>>([]);
-  final ValueNotifier<List<CompletedExamItem>> completedExams =
-      ValueNotifier<List<CompletedExamItem>>([]);
+  final ValueNotifier<List<ExamItemModel>> recommendedExams = ValueNotifier([]);
+  final ValueNotifier<List<CompletedExamItemModel>> completedExams =
+      ValueNotifier([]);
 
-  final ValueNotifier<bool> isLoading = ValueNotifier<bool>(false);
-  final ValueNotifier<String?> errorMessage = ValueNotifier<String?>(null);
-  final ValueNotifier<bool> noDesglosPermission = ValueNotifier<bool>(false);
+  final ValueNotifier<bool> isLoading = ValueNotifier(false);
+  final ValueNotifier<String?> errorMessage = ValueNotifier(null);
+  final ValueNotifier<bool> noDesglosPermission = ValueNotifier(false);
 
-  final ExamRemoteDataSource _remoteDataSource = ExamRemoteDataSource();
+  List<ExamItemModel> _allRecommended = [];
+  List<CompletedExamItemModel> _allCompleted = [];
 
-  List<ExamItem> _allRecommended = [];
-  List<CompletedExamItem> _allCompleted = [];
-
-  ExamsViewModel() {
+  ExamsViewModel({
+    required GetAvailableExamsUseCase getAvailableExams,
+    required GetDetailedExamsUseCase getDetailedExams,
+  })  : _getAvailableExams = getAvailableExams,
+        _getDetailedExams = getDetailedExams {
     searchController.addListener(_applyFilter);
     selectedFilter.addListener(_applyFilter);
     selectedSubtema.addListener(_applyFilter);
@@ -126,9 +61,10 @@ class ExamsViewModel {
     noDesglosPermission.value = false;
 
     try {
-      final availableEntities = await _remoteDataSource.getAvailableExams();
+      // Cargar exámenes disponibles
+      final availableEntities = await _getAvailableExams();
       _allRecommended =
-          availableEntities.map((e) => ExamItem.fromEntity(e)).toList();
+          availableEntities.map(ExamItemModel.fromEntity).toList();
 
       final subtemas = _allRecommended
           .map((e) => e.subtema)
@@ -139,22 +75,18 @@ class ExamsViewModel {
         ..sort();
       availableSubtemas.value = subtemas;
 
+      // Cargar exámenes completados (puede requerir permiso premium)
       try {
-        final completedEntities = await _remoteDataSource.getDetailedExams();
-        _allCompleted = completedEntities
-            .map((e) => CompletedExamItem.fromEntity(e))
-            .toList();
-      } on DioException catch (e) {
-        if (e.response?.statusCode == 403) {
-          _allCompleted = [];
-          noDesglosPermission.value = true;
-        } else {
-          rethrow;
-        }
+        final completedEntities = await _getDetailedExams();
+        _allCompleted =
+            completedEntities.map(CompletedExamItemModel.fromEntity).toList();
+      } on PermissionDeniedException {
+        _allCompleted = [];
+        noDesglosPermission.value = true;
       }
 
       _applyFilter();
-    } catch (e) {
+    } catch (_) {
       errorMessage.value = 'Error al cargar exámenes';
     } finally {
       isLoading.value = false;
@@ -193,21 +125,14 @@ class ExamsViewModel {
     selectedSubtema.value = subtema;
   }
 
-  void onSearch(String query) {
-    _applyFilter();
+  void onSearch(String _) => _applyFilter();
+
+  void onStartExam(BuildContext context, ExamItemModel exam) {
+    AppNavigator.push(context, AppRoutes.examTake, arguments: exam);
   }
 
-  void onStartExam(BuildContext context, ExamItem exam) {
-    AppNavigator.push(
-      context,
-      AppRoutes.examTake,
-      arguments: exam,
-    );
-  }
-
-  void onCompletedExamTap(BuildContext context, CompletedExamItem exam) {
-    // Usamos examId (id_examen) para que el botón "Repetir" funcione correctamente
-    final tempExam = ExamItem(
+  void onCompletedExamTap(BuildContext context, CompletedExamItemModel exam) {
+    final tempExam = ExamItemModel(
       id: exam.examId,
       title: exam.title,
       category: 'Examen completado',

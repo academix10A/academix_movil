@@ -5,7 +5,9 @@ import 'package:academix/features/note/presentation/view/notes_screen.dart';
 import 'package:academix/features/exam/presentation/view/exams_screen.dart';
 import 'package:academix/features/profile/presentation/view/profile_screen.dart';
 import 'package:academix/features/home/presentation/view/home_screen.dart';
+import 'package:academix/features/publication/presentation/view/publications_screen.dart';
 import 'package:academix/features/profile/profile_di.dart';
+import 'package:academix/features/exam/exam_dependencies.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -20,14 +22,17 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _screens = [
     const HomeScreen(),
     const LibraryScreen(),
+    const PublicationsScreen(),
     const NotesScreen(),
-    const ExamsScreen(),
+    ExamDependenciesProvider(
+      dependencies: ExamDependencies(),
+      child: const ExamsScreen(),
+    ),
     ProfileScreen(vm: ProfileDI.profileViewModel),
   ];
 
   void _onTabTapped(int index) {
     if (index == _currentIndex) return;
-
     setState(() {
       _currentIndex = index;
     });
@@ -47,4 +52,3 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 }
-

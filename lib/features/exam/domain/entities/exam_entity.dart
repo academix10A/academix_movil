@@ -2,7 +2,7 @@ class OptionEntity {
   final int idOpcion;
   final String respuesta;
 
-  OptionEntity({
+  const OptionEntity({
     required this.idOpcion,
     required this.respuesta,
   });
@@ -20,7 +20,7 @@ class QuestionEntity {
   final String contenido;
   final List<OptionEntity> opciones;
 
-  QuestionEntity({
+  const QuestionEntity({
     required this.idPregunta,
     required this.contenido,
     required this.opciones,
@@ -50,10 +50,10 @@ class ExamEntity {
   final bool estaActivo;
   final int idUsuarioCreador;
   final String? nombreCreador;
-  final String? nombreSubtema; // Para filtros por subtema
+  final String? nombreSubtema;
   final List<QuestionEntity>? preguntas;
 
-  ExamEntity({
+  const ExamEntity({
     required this.idExamen,
     required this.titulo,
     this.descripcion,
@@ -70,7 +70,6 @@ class ExamEntity {
   });
 
   factory ExamEntity.fromJson(Map<String, dynamic> json) {
-    // El backend devuelve subtema anidado o nombre plano
     String? subtemaName;
     if (json['subtema'] is Map) {
       subtemaName = json['subtema']['nombre'];
@@ -151,7 +150,7 @@ class CompletedExamEntity {
   final String? tituloExamen;
   final double? porcentaje;
 
-  CompletedExamEntity({
+  const CompletedExamEntity({
     required this.idIntento,
     required this.idExamen,
     required this.idUsuario,
@@ -220,14 +219,13 @@ class CompletedExamEntity {
   int get incorrectAnswers => cantidadPreguntas - respuestasCorrectas;
 }
 
-// Modelo para múltiples intentos (premium)
 class ExamIntentoEntity {
   final int numeroIntento;
   final int idIntento;
   final double calificacion;
   final DateTime fecha;
 
-  ExamIntentoEntity({
+  const ExamIntentoEntity({
     required this.numeroIntento,
     required this.idIntento,
     required this.calificacion,
@@ -255,7 +253,7 @@ class ExamMisIntentosEntity {
   final int totalIntentos;
   final List<ExamIntentoEntity> intentos;
 
-  ExamMisIntentosEntity({
+  const ExamMisIntentosEntity({
     required this.idExamen,
     required this.tituloExamen,
     required this.totalIntentos,

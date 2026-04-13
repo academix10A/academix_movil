@@ -1,3 +1,4 @@
+// note/presentation/view/note_detail_screen.dart
 import 'package:flutter/material.dart';
 import 'package:academix/core/constants/app_spacing.dart';
 import 'package:academix/core/themes/app_text_styles.dart';
@@ -18,7 +19,6 @@ class NoteDetailScreen extends StatefulWidget {
 }
 
 class _NoteDetailScreenState extends State<NoteDetailScreen> {
-  // Use cases directos — esta pantalla no necesita cargar listas.
   late final UpdateNoteUseCase _updateNote;
   late final DeleteNoteUseCase _deleteNote;
 
@@ -27,6 +27,18 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
 
   bool _isEditing = false;
   bool _isLoading = false;
+
+  // Mismo patrón de colores accent que LibraryResourceCard
+  static const List<Color> _accentColors = [
+    Color(0xFFE8C547),
+    Color(0xFF4CAF50),
+    Color(0xFF2196F3),
+    Color(0xFFFF5722),
+    Color(0xFF9C27B0),
+  ];
+
+  Color get _accent =>
+      _accentColors[(widget.note.idNota ?? 0) % _accentColors.length];
 
   @override
   void initState() {
@@ -60,7 +72,13 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al guardar: $e')),
+          SnackBar(
+            content: Text('Error al guardar: $e'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.md)),
+          ),
         );
       }
     } finally {
@@ -76,7 +94,13 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al eliminar: $e')),
+          SnackBar(
+            content: Text('Error al eliminar: $e'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.md)),
+          ),
         );
       }
     } finally {
@@ -91,7 +115,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header
+            // ── Header (estilo BookDetailScreen) ─────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.lg,
@@ -99,6 +123,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
               ),
               child: Row(
                 children: [
+                  // Botón atrás
                   GestureDetector(
                     onTap: () => AppNavigator.pop(context),
                     child: Container(
@@ -107,38 +132,42 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                         color: AppColors.backgroundCard,
                         borderRadius: BorderRadius.circular(AppRadius.md),
                       ),
-                      child: Icon(Icons.arrow_back_rounded,
+                      child: const Icon(Icons.arrow_back_rounded,
                           color: AppColors.text, size: 22),
                     ),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: AppSpacing.sm),
+
+                  // Badge compartida — mismo estilo que _UrlTypeBadge
                   if (widget.note.isShared)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md, vertical: 6),
+                          horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                       decoration: BoxDecoration(
-                        color: Colors.transparent,
+                        color: _accent.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(AppRadius.full),
-                        border: Border.all(color: AppColors.accent, width: 1.5),
+                        border: Border.all(color: _accent.withOpacity(0.3)),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.people_outline_rounded,
-                              size: 14, color: AppColors.accent),
+                              size: 14, color: _accent),
                           const SizedBox(width: 4),
                           Text(
-                            "Compartida",
+                            'Compartida',
                             style: AppTextStyles.bodySmall.copyWith(
-                              color: AppColors.accent,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12,
+                              color: _accent,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],
                       ),
                     ),
-                  const SizedBox(width: AppSpacing.sm),
+
+                  const Spacer(),
+
+                  // Botón editar / guardar
                   GestureDetector(
                     onTap: _isLoading
                         ? null
@@ -178,13 +207,14 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
               ),
             ),
 
-            // Contenido scrollable
+            // ── Contenido scrollable ──────────────────────────────────────
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Tiempo relativo
                     Text(
                       widget.note.timeAgo,
                       style: AppTextStyles.bodySmall
@@ -192,16 +222,16 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                     ),
                     const SizedBox(height: AppSpacing.md),
 
-                    // Título editable
+                    // Título — editable o display
                     if (_isEditing)
                       TextField(
                         controller: _titleController,
-                        style: AppTextStyles.h1.copyWith(
-                            color: AppColors.primary, fontSize: 24),
+                        style: AppTextStyles.h1
+                            .copyWith(color: AppColors.primary, fontSize: 26),
                         decoration: InputDecoration(
-                          hintText: "Título de la nota",
+                          hintText: 'Título de la nota',
                           hintStyle: AppTextStyles.h1.copyWith(
-                              color: AppColors.textMuted, fontSize: 24),
+                              color: AppColors.textMuted, fontSize: 26),
                           border: InputBorder.none,
                           contentPadding: EdgeInsets.zero,
                         ),
@@ -209,44 +239,65 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                     else
                       Text(
                         widget.note.title,
-                        style: AppTextStyles.h1.copyWith(
-                            color: AppColors.primary, fontSize: 24),
+                        style: AppTextStyles.h1
+                            .copyWith(color: AppColors.primary, fontSize: 26),
                       ),
 
                     const SizedBox(height: AppSpacing.md),
 
-                    // Tags
-                    Wrap(
-                      spacing: AppSpacing.sm,
-                      runSpacing: AppSpacing.sm,
-                      children: widget.note.tags
-                          .map(
-                            (tag) => Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: AppSpacing.md, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withOpacity(0.15),
-                                borderRadius:
-                                    BorderRadius.circular(AppRadius.full),
-                              ),
-                              child: Text(
-                                tag,
-                                style: AppTextStyles.bodySmall.copyWith(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 12,
+                    // Tags — mismo estilo que categoría en BookDetailScreen
+                    if (widget.note.tags.isNotEmpty)
+                      Wrap(
+                        spacing: AppSpacing.sm,
+                        runSpacing: AppSpacing.sm,
+                        children: widget.note.tags
+                            .map(
+                              (tag) => Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: AppSpacing.md, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withOpacity(0.15),
+                                  borderRadius:
+                                      BorderRadius.circular(AppRadius.full),
+                                ),
+                                child: Text(
+                                  tag,
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
-                            ),
-                          )
-                          .toList(),
-                    ),
+                            )
+                            .toList(),
+                      ),
 
                     const SizedBox(height: AppSpacing.xl),
-                    Container(height: 1, color: AppColors.border),
+
+                    // Divider con color accent (igual al de publication_detail)
+                    Container(
+                      height: 1,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            _accent.withOpacity(0.5),
+                            _accent.withOpacity(0),
+                          ],
+                        ),
+                      ),
+                    ),
+
                     const SizedBox(height: AppSpacing.lg),
 
-                    // Contenido editable
+                    // Label sección contenido
+                    Text(
+                      'Contenido',
+                      style: AppTextStyles.h2
+                          .copyWith(color: AppColors.text, fontSize: 18),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+
+                    // Contenido — editable (con borde accent) o display
                     if (_isEditing)
                       Container(
                         padding: const EdgeInsets.all(AppSpacing.md),
@@ -254,8 +305,9 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                           color: AppColors.backgroundCard,
                           borderRadius: BorderRadius.circular(AppRadius.md),
                           border: Border.all(
-                              color: AppColors.primary.withOpacity(0.3),
-                              width: 1.5),
+                            color: _accent.withOpacity(0.4),
+                            width: 1.5,
+                          ),
                         ),
                         child: TextField(
                           controller: _contentController,
@@ -264,7 +316,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                           style: AppTextStyles.body
                               .copyWith(color: AppColors.text, height: 1.6),
                           decoration: InputDecoration(
-                            hintText: "Escribe tu nota aquí...",
+                            hintText: 'Escribe tu nota aquí...',
                             hintStyle: AppTextStyles.body
                                 .copyWith(color: AppColors.textMuted),
                             border: InputBorder.none,
@@ -272,27 +324,33 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                         ),
                       )
                     else
+                      // Igual que _ReadingContent en BookDetailScreen
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(AppSpacing.lg),
                         decoration: BoxDecoration(
                           color: AppColors.backgroundCard,
                           borderRadius: BorderRadius.circular(AppRadius.md),
+                          border: Border.all(
+                            color: _accent.withOpacity(0.25),
+                            width: 1,
+                          ),
                         ),
                         child: Text(
                           widget.note.content,
-                          style: AppTextStyles.body
-                              .copyWith(color: AppColors.text, height: 1.8),
+                          style: AppTextStyles.body.copyWith(
+                            color: AppColors.text,
+                            height: 1.8,
+                          ),
                         ),
                       ),
 
                     const SizedBox(height: AppSpacing.xl),
 
-                    // Recurso asociado
+                    // Recurso asociado — estilo card igual que BookDetailScreen
                     if (widget.note.hasResource)
                       Padding(
-                        padding:
-                            const EdgeInsets.only(bottom: AppSpacing.lg),
+                        padding: const EdgeInsets.only(bottom: AppSpacing.lg),
                         child: GestureDetector(
                           onTap: () => AppNavigator.push(
                             context,
@@ -303,25 +361,28 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                             width: double.infinity,
                             padding: const EdgeInsets.all(AppSpacing.lg),
                             decoration: BoxDecoration(
-                              color: AppColors.backgroundCard.withOpacity(0.6),
-                              borderRadius: BorderRadius.circular(AppRadius.md),
+                              color: AppColors.backgroundCard,
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.md),
                               border: Border.all(
-                                  color: AppColors.primary.withOpacity(0.3),
-                                  width: 1),
+                                color: AppColors.primary.withOpacity(0.25),
+                                width: 1,
+                              ),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
                                   children: [
-                                    Icon(Icons.book_outlined,
-                                        color: AppColors.primary, size: 20),
+                                    const Icon(Icons.menu_book_rounded,
+                                        color: AppColors.primary, size: 18),
                                     const SizedBox(width: AppSpacing.sm),
                                     Text(
                                       'Recurso asociado',
                                       style: AppTextStyles.bodySmall.copyWith(
-                                          color: AppColors.textMuted,
-                                          fontWeight: FontWeight.w500),
+                                        color: AppColors.textMuted,
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -329,9 +390,10 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                                 Text(
                                   widget.note.resource!.title,
                                   style: AppTextStyles.h2.copyWith(
-                                      fontSize: 18,
-                                      color: AppColors.text,
-                                      fontWeight: FontWeight.w600),
+                                    fontSize: 18,
+                                    color: AppColors.text,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                                 const SizedBox(height: AppSpacing.xs),
                                 Text(
@@ -348,8 +410,9 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                                     Text(
                                       'Ver recurso →',
                                       style: AppTextStyles.bodySmall.copyWith(
-                                          color: AppColors.primary,
-                                          fontWeight: FontWeight.w600),
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -362,14 +425,14 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                     // Opciones en modo edición
                     if (_isEditing) ...[
                       Text(
-                        "Opciones",
+                        'Opciones',
                         style: AppTextStyles.h2
                             .copyWith(color: AppColors.text, fontSize: 16),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       _OptionButton(
                         icon: Icons.delete_outline_rounded,
-                        label: "Eliminar nota",
+                        label: 'Eliminar nota',
                         isDestructive: true,
                         onTap: () => _showDeleteConfirmation(context),
                       ),
@@ -393,22 +456,23 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
         backgroundColor: AppColors.backgroundCard,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.md)),
-        title: Text("¿Eliminar nota?",
+        title: Text('¿Eliminar nota?',
             style: AppTextStyles.h2.copyWith(color: AppColors.text)),
-        content: Text("Esta acción no se puede deshacer.",
+        content: Text('Esta acción no se puede deshacer.',
             style: AppTextStyles.body.copyWith(color: AppColors.textMuted)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text("Cancelar",
-                style: AppTextStyles.body.copyWith(color: AppColors.textMuted)),
+            child: Text('Cancelar',
+                style:
+                    AppTextStyles.body.copyWith(color: AppColors.textMuted)),
           ),
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
               await deleteNote();
             },
-            child: Text("Eliminar",
+            child: Text('Eliminar',
                 style: AppTextStyles.body.copyWith(color: AppColors.error)),
           ),
         ],
@@ -416,6 +480,8 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     );
   }
 }
+
+// ─── Widgets auxiliares ────────────────────────────────────────────────────────
 
 class _OptionButton extends StatelessWidget {
   final IconData icon;
