@@ -8,6 +8,13 @@ import 'package:academix/features/library/domain/usecases/toggle_favorite_usecas
 import 'package:academix/features/library/presentation/viewmodel/book_detail_viewmodel.dart';
 import 'package:academix/features/library/presentation/viewmodel/library_viewmodel.dart';
 import 'package:academix/features/library/presentation/viewmodel/search_viewmodel.dart';
+import 'package:academix/features/library/data/datasources/publication_remote_datasource.dart';
+import 'package:academix/features/library/data/repositories/publication_repository_impl.dart';
+import 'package:academix/features/library/domain/usecases/get_publication_by_id_usecase.dart';
+import 'package:academix/features/library/presentation/viewmodel/publication_detail_viewmodel.dart';
+import 'package:academix/features/library/presentation/viewmodel/progreso_viewmodel.dart';
+import 'package:academix/features/library/data/repositories/progreso_repository_impl.dart';
+import 'package:academix/features/library/data/datasources/progreso_remote_datasource.dart';
 
 /// Assembles the full dependency graph for the library feature.
 /// Call these factory methods from initState() in each Screen.
@@ -43,5 +50,17 @@ class LibraryDI {
 
   static SearchViewModel searchViewModel() {
     return SearchViewModel(searchDataSource: SearchRemoteDataSource());
+  }
+
+  static ProgresoViewModel progresoViewModel({required int idRecurso}) {
+    final repo = ProgresoRepositoryImpl(ProgresoRemoteDataSource());
+    return ProgresoViewModel(repository: repo, idRecurso: idRecurso);
+  }
+
+  static PublicationDetailViewModel publicationDetailViewModel() {
+    final repo = PublicationRepositoryImpl(PublicationRemoteDataSource());
+    return PublicationDetailViewModel(
+      getPublicationByIdUseCase: GetPublicationByIdUseCase(repo),
+    );
   }
 }

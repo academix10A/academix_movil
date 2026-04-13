@@ -1,72 +1,54 @@
 import 'package:flutter/material.dart';
-
-class OfflineItem {
-  final String id;
-  final String type;
-  final String title;
-  final String size;
-  final DateTime downloadedAt;
-  final bool synced;
-
-  OfflineItem({
-    required this.id,
-    required this.type,
-    required this.title,
-    required this.size,
-    required this.downloadedAt,
-    this.synced = false,
-  });
-}
+import '../../domain/entities/offline_entity.dart';
+import '../../domain/usecases/save_offline_usecase.dart';
+import '../../domain/usecases/delete_offline_usecase.dart';
+import '../../domain/usecases/check_offline_usecase.dart';
+import '../../domain/usecases/list_offline_usecase.dart';
 
 class OfflineViewModel {
-  final offlineItems = ValueNotifier<List<OfflineItem>>(OfflineViewModel._getMockOffline());
-  bool isSyncing = false;
+  final SaveOfflineUseCase   saveUseCase;
+  final DeleteOfflineUseCase deleteUseCase;
+  final CheckOfflineUseCase  checkUseCase;
+  final ListOfflineUseCase   listUseCase;
 
-  void syncAll() async {
-    isSyncing = true;
-    await Future.delayed(const Duration(seconds: 2));
-    // TODO: API sync
-    final items = offlineItems.value.map((item) => OfflineItem(
-      id: item.id,
-      type: item.type,
-      title: item.title,
-      size: item.size,
-      downloadedAt: item.downloadedAt,
-      synced: true,
-    )).toList();
-    offlineItems.value = items;
-    isSyncing = false;
+  OfflineViewModel({
+    required this.saveUseCase,
+    required this.deleteUseCase,
+    required this.checkUseCase,
+    required this.listUseCase,
+  }) {
+    cargarLista();
   }
 
-  static List<OfflineItem> _getMockOffline() {
-    return [
-      OfflineItem(
-        id: 'o1',
-        type: 'resource',
-        title: 'Introducción a Álgebra (PDF)',
-        size: '2.3 MB',
-        downloadedAt: DateTime.now().subtract(const Duration(hours: 2)),
-      ),
-      OfflineItem(
-        id: 'o2',
-        type: 'note',
-        title: 'Mis notas Historia',
-        size: '45 KB',
-        downloadedAt: DateTime.now().subtract(const Duration(days: 1)),
-        synced: true,
-      ),
-      OfflineItem(
-        id: 'o3',
-        type: 'exam',
-        title: 'Examen Biología offline',
-        size: '120 KB',
-        downloadedAt: DateTime.now().subtract(const Duration(minutes: 30)),
-      ),
-    ];
+  final ValueNotifier<List<OfflineEntity>> offlineItems =
+      ValueNotifier([]);
+  final ValueNotifier<bool> isLoading = ValueNotifier(false);
+
+  Future<void> cargarLista() async {
+    isLoading.value = true;
+    try {
+      offlineItems.value = await listUseCase();
+    } finally {
+      isLoading.value = false;
+    }
   }
+
+  // Llamado desde OfflineButton
+  Future<void> guardar(Map<String, dynamic> recurso) async {
+    await saveUseCase(recurso);
+    await cargarLista();
+  }
+
+  Future<void> eliminar(int idRecurso, String? urlArchivo) async {
+    await deleteUseCase(idRecurso, urlArchivo);
+    await cargarLista();
+  }
+
+  Future<bool> estaGuardado(int idRecurso) =>
+      checkUseCase(idRecurso);
 
   void dispose() {
     offlineItems.dispose();
+    isLoading.dispose();
   }
 }
-

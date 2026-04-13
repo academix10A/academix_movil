@@ -3,10 +3,10 @@ import 'package:academix/core/constants/app_spacing.dart';
 import 'package:academix/core/constants/app_radius.dart';
 import 'package:academix/core/themes/app_text_styles.dart';
 import 'package:academix/core/themes/app_colors.dart';
-import 'package:academix/features/exam/presentation/viewmodel/exams_viewmodel.dart';
+import 'package:academix/features/exam/data/models/exam_models.dart';
 
 class ExamCompletedCard extends StatelessWidget {
-  final CompletedExamItem exam;
+  final CompletedExamItemModel exam;
   final VoidCallback onTap;
 
   const ExamCompletedCard({
@@ -16,7 +16,9 @@ class ExamCompletedCard extends StatelessWidget {
   });
 
   Color get _scoreColor {
-    if (exam.grade == 'APROBADO' || exam.grade == 'EXCELENTE') return AppColors.success;
+    if (exam.grade == 'APROBADO' || exam.grade == 'EXCELENTE') {
+      return AppColors.success;
+    }
     return AppColors.error;
   }
 
@@ -33,7 +35,7 @@ class ExamCompletedCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Indicador de score circular pequeño
+            // Indicador circular de score
             SizedBox(
               width: 52,
               height: 52,
@@ -87,9 +89,8 @@ class ExamCompletedCard extends StatelessWidget {
                       ),
                       Text(
                         ' · ',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.textMuted,
-                        ),
+                        style: AppTextStyles.bodySmall
+                            .copyWith(color: AppColors.textMuted),
                       ),
                       Text(
                         exam.timeAgo,

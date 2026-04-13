@@ -4,10 +4,14 @@ import 'package:academix/core/themes/app_text_styles.dart';
 import 'package:academix/core/themes/app_colors.dart';
 import 'package:academix/core/constants/app_radius.dart';
 import 'package:academix/core/routes/app_routes.dart';
-import 'package:academix/features/exam/presentation/viewmodel/exams_viewmodel.dart';
+import 'package:academix/features/exam/data/models/exam_models.dart';
 
+/// Pantalla de resultado de un examen.
+/// 
+/// Solo presenta datos. Sin lógica de negocio (los umbrales de calificación
+/// se calcularon en [SubmitExamUseCase] antes de llegar aquí).
 class ExamResultScreen extends StatelessWidget {
-  final ExamItem? exam;
+  final ExamItemModel? exam;
   final int score;
   final String grade;
   final int correctAnswers;
@@ -24,7 +28,7 @@ class ExamResultScreen extends StatelessWidget {
 
   factory ExamResultScreen.fromArgs(Map<String, dynamic> args) {
     return ExamResultScreen(
-      exam: args['exam'] as ExamItem?,
+      exam: args['exam'] as ExamItemModel?,
       score: args['score'] as int? ?? 0,
       grade: args['grade'] as String? ?? '',
       correctAnswers: args['correctAnswers'] as int? ?? 0,
@@ -52,7 +56,7 @@ class ExamResultScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // Header fijo con botón volver
+            // Header
             Padding(
               padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.lg, vertical: AppSpacing.md),
@@ -72,12 +76,10 @@ class ExamResultScreen extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  Text(
-                    "Resultado",
-                    style: AppTextStyles.h2.copyWith(color: AppColors.text),
-                  ),
+                  Text('Resultado',
+                      style: AppTextStyles.h2.copyWith(color: AppColors.text)),
                   const Spacer(),
-                  const SizedBox(width: 42), // balance
+                  const SizedBox(width: 42),
                 ],
               ),
             ),
@@ -85,12 +87,11 @@ class ExamResultScreen extends StatelessWidget {
             // Contenido scrollable
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 child: Column(
                   children: [
                     const SizedBox(height: AppSpacing.lg),
-
-                    // Icono y mensaje principal
                     Container(
                       width: 88,
                       height: 88,
@@ -106,31 +107,22 @@ class ExamResultScreen extends StatelessWidget {
                         color: _scoreColor,
                       ),
                     ),
-
                     const SizedBox(height: AppSpacing.lg),
-
                     Text(
                       _isPassed ? '¡Felicidades!' : '¡Sigue practicando!',
-                      style: AppTextStyles.display.copyWith(
-                        color: AppColors.text,
-                        fontSize: 26,
-                      ),
+                      style: AppTextStyles.display
+                          .copyWith(color: AppColors.text, fontSize: 26),
                     ),
-
                     const SizedBox(height: AppSpacing.xs),
-
                     Text(
                       _title,
                       textAlign: TextAlign.center,
-                      style: AppTextStyles.body.copyWith(
-                        color: AppColors.textMuted,
-                        fontSize: 14,
-                      ),
+                      style: AppTextStyles.body
+                          .copyWith(color: AppColors.textMuted, fontSize: 14),
                     ),
-
                     const SizedBox(height: AppSpacing.xl),
 
-                    // Tarjeta score principal
+                    // Tarjeta score
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(AppSpacing.xl),
@@ -140,7 +132,6 @@ class ExamResultScreen extends StatelessWidget {
                       ),
                       child: Column(
                         children: [
-                          // Círculo de progreso
                           SizedBox(
                             width: 140,
                             height: 140,
@@ -155,8 +146,9 @@ class ExamResultScreen extends StatelessWidget {
                                     strokeWidth: 10,
                                     backgroundColor:
                                         AppColors.border.withOpacity(0.3),
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                        _scoreColor),
+                                    valueColor:
+                                        AlwaysStoppedAnimation<Color>(
+                                            _scoreColor),
                                     strokeCap: StrokeCap.round,
                                   ),
                                 ),
@@ -166,27 +158,27 @@ class ExamResultScreen extends StatelessWidget {
                                     Text(
                                       '$score%',
                                       style: AppTextStyles.display.copyWith(
-                                        color: AppColors.text,
-                                        fontSize: 34,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                          color: AppColors.text,
+                                          fontSize: 34,
+                                          fontWeight: FontWeight.bold),
                                     ),
                                     Container(
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 8, vertical: 2),
                                       decoration: BoxDecoration(
-                                        color: _scoreColor.withOpacity(0.15),
+                                        color:
+                                            _scoreColor.withOpacity(0.15),
                                         borderRadius: BorderRadius.circular(
                                             AppRadius.full),
                                       ),
                                       child: Text(
                                         grade,
-                                        style: AppTextStyles.bodySmall.copyWith(
-                                          color: _scoreColor,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 10,
-                                          letterSpacing: 1,
-                                        ),
+                                        style: AppTextStyles.bodySmall
+                                            .copyWith(
+                                                color: _scoreColor,
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 10,
+                                                letterSpacing: 1),
                                       ),
                                     ),
                                   ],
@@ -194,10 +186,7 @@ class ExamResultScreen extends StatelessWidget {
                               ],
                             ),
                           ),
-
                           const SizedBox(height: AppSpacing.xl),
-
-                          // Stats: correctas, incorrectas, total
                           if (totalQuestions > 0)
                             Row(
                               children: [
@@ -229,7 +218,7 @@ class ExamResultScreen extends StatelessWidget {
 
                     const SizedBox(height: AppSpacing.md),
 
-                    // Detalles del examen (solo si hay datos)
+                    // Detalles del examen
                     if (_category.isNotEmpty ||
                         _difficulty.isNotEmpty ||
                         _durationMinutes > 0)
@@ -243,30 +232,30 @@ class ExamResultScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              "Detalles del examen",
-                              style: AppTextStyles.h2.copyWith(
-                                color: AppColors.text,
-                                fontSize: 15,
-                              ),
-                            ),
+                            Text('Detalles del examen',
+                                style: AppTextStyles.h2.copyWith(
+                                    color: AppColors.text, fontSize: 15)),
                             const SizedBox(height: AppSpacing.md),
                             if (_category.isNotEmpty &&
                                 _category != 'Examen completado')
-                              _DetailRow(label: "Categoría", value: _category),
-                            if (_difficulty.isNotEmpty && _difficulty != 'N/A')
+                              _DetailRow(
+                                  label: 'Categoría', value: _category),
+                            if (_difficulty.isNotEmpty &&
+                                _difficulty != 'N/A')
                               Padding(
-                                padding: const EdgeInsets.only(top: AppSpacing.sm),
+                                padding: const EdgeInsets.only(
+                                    top: AppSpacing.sm),
                                 child: _DetailRow(
-                                    label: "Dificultad", value: _difficulty),
+                                    label: 'Dificultad',
+                                    value: _difficulty),
                               ),
                             if (_durationMinutes > 0)
                               Padding(
-                                padding: const EdgeInsets.only(top: AppSpacing.sm),
+                                padding: const EdgeInsets.only(
+                                    top: AppSpacing.sm),
                                 child: _DetailRow(
-                                  label: "Duración",
-                                  value: "$_durationMinutes min",
-                                ),
+                                    label: 'Duración',
+                                    value: '$_durationMinutes min'),
                               ),
                           ],
                         ),
@@ -278,14 +267,13 @@ class ExamResultScreen extends StatelessWidget {
               ),
             ),
 
-            // Botones de acción fijos abajo
+            // Botones fijos
             Container(
               padding: const EdgeInsets.all(AppSpacing.lg),
               decoration: BoxDecoration(
                 color: AppColors.background,
-                border: Border(
-                  top: BorderSide(color: AppColors.border, width: 1),
-                ),
+                border:
+                    Border(top: BorderSide(color: AppColors.border, width: 1)),
               ),
               child: Row(
                 children: [
@@ -306,14 +294,11 @@ class ExamResultScreen extends StatelessWidget {
                             Icon(Icons.list_alt_rounded,
                                 color: AppColors.text, size: 18),
                             const SizedBox(width: AppSpacing.sm),
-                            Text(
-                              "Ver exámenes",
-                              style: AppTextStyles.body.copyWith(
-                                color: AppColors.text,
-                                fontWeight: FontWeight.w500,
-                                fontSize: 14,
-                              ),
-                            ),
+                            Text('Ver exámenes',
+                                style: AppTextStyles.body.copyWith(
+                                    color: AppColors.text,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 14)),
                           ],
                         ),
                       ),
@@ -324,16 +309,15 @@ class ExamResultScreen extends StatelessWidget {
                     Expanded(
                       child: GestureDetector(
                         onTap: () => AppNavigator.pushReplacement(
-                          context,
-                          AppRoutes.examTake,
-                          arguments: exam,
-                        ),
+                            context, AppRoutes.examTake,
+                            arguments: exam),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                               vertical: AppSpacing.md),
                           decoration: BoxDecoration(
                             color: AppColors.primary,
-                            borderRadius: BorderRadius.circular(AppRadius.md),
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.md),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -341,14 +325,11 @@ class ExamResultScreen extends StatelessWidget {
                               Icon(Icons.replay_rounded,
                                   color: AppColors.background, size: 18),
                               const SizedBox(width: AppSpacing.sm),
-                              Text(
-                                "Repetir",
-                                style: AppTextStyles.body.copyWith(
-                                  color: AppColors.background,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                ),
-                              ),
+                              Text('Repetir',
+                                  style: AppTextStyles.body.copyWith(
+                                      color: AppColors.background,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14)),
                             ],
                           ),
                         ),
@@ -371,12 +352,11 @@ class _StatBadge extends StatelessWidget {
   final String label;
   final Color color;
 
-  const _StatBadge({
-    required this.icon,
-    required this.value,
-    required this.label,
-    required this.color,
-  });
+  const _StatBadge(
+      {required this.icon,
+      required this.value,
+      required this.label,
+      required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -391,21 +371,14 @@ class _StatBadge extends StatelessWidget {
           children: [
             Icon(icon, color: color, size: 20),
             const SizedBox(height: 6),
-            Text(
-              value,
-              style: AppTextStyles.h2.copyWith(
-                color: AppColors.text,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              label,
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textMuted,
-                fontSize: 11,
-              ),
-            ),
+            Text(value,
+                style: AppTextStyles.h2.copyWith(
+                    color: AppColors.text,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold)),
+            Text(label,
+                style: AppTextStyles.bodySmall
+                    .copyWith(color: AppColors.textMuted, fontSize: 11)),
           ],
         ),
       ),
@@ -424,17 +397,12 @@ class _DetailRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted),
-        ),
-        Text(
-          value,
-          style: AppTextStyles.body.copyWith(
-            color: AppColors.text,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        Text(label,
+            style:
+                AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted)),
+        Text(value,
+            style: AppTextStyles.body.copyWith(
+                color: AppColors.text, fontWeight: FontWeight.w500)),
       ],
     );
   }

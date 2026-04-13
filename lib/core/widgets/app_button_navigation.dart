@@ -37,7 +37,7 @@ class AppBottomNavigation extends StatelessWidget {
           fontWeight: FontWeight.w600,
         ),
         unselectedLabelStyle: AppTextStyles.caption,
-        items: const [
+items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: 'Inicio',
@@ -45,6 +45,10 @@ class AppBottomNavigation extends StatelessWidget {
           BottomNavigationBarItem(
             icon: Icon(Icons.library_books),
             label: 'Biblioteca',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.article_rounded),
+            label: 'Publicaciones',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.note),

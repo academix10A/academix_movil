@@ -14,16 +14,20 @@ import 'features/profile/presentation/view/premium_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'features/library/data/models/library_resource_ui_model.dart';
 import 'features/note/presentation/viewmodel/notes_viewmodel.dart';
-import 'features/exam/presentation/viewmodel/exams_viewmodel.dart';
 import 'features/auth/presentation/view/register_screen.dart';
 import 'features/auth/presentation/view/forgot_password_screen.dart';
 import 'features/auth/presentation/view/splash_screen.dart';
 import 'features/profile/presentation/view/favorites_screen.dart';
 import 'features/home/presentation/view/offline_content_screen.dart';
-import 'features/library/presentation/view/search_screen.dart';
 import 'features/library/presentation/view/ai_chat_screen.dart';
 import 'features/exam/presentation/view/exam_history_screen.dart';
 import 'features/profile/profile_di.dart';
+import 'features/exam/data/models/exam_models.dart';
+import 'features/exam/exam_dependencies.dart';
+import 'features/library/presentation/view/publication_library_detail_screen.dart';
+import 'features/library/presentation/view/note_detail_screen.dart';
+import 'features/publication/presentation/view/publication_detail_screen.dart';
+import 'features/publication/domain/entities/publication_entity.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -46,12 +50,16 @@ class MyApp extends StatelessWidget {
         switch (settings.name) {
           case AppRoutes.login:
             return MaterialPageRoute(builder: (_) => const LoginScreen());
+          case AppRoutes.publicationDetail:
+            final publication = settings.arguments as PublicationEntity;
+            return MaterialPageRoute(
+              builder: (_) => PublicationDetailScreen(publication: publication),
+              settings: settings,
+            );
           case AppRoutes.main:
             return MaterialPageRoute(builder: (_) => const MainScreen());
           case AppRoutes.splash:
             return MaterialPageRoute(builder: (_) => const SplashScreen());
-          case AppRoutes.search:
-            return MaterialPageRoute(builder: (_) => const SearchScreen());
           case AppRoutes.favorites:
             return MaterialPageRoute(builder: (_) => const FavoritesScreen());
           case AppRoutes.offline:
@@ -68,20 +76,36 @@ class MyApp extends StatelessWidget {
             );
           case AppRoutes.createNote:
             return MaterialPageRoute(builder: (_) => const CreateNoteScreen());
-          case AppRoutes.examTake:
-            final exam = settings.arguments as ExamItem;
+          case AppRoutes.noteDetailLibrary:
+            final noteId = settings.arguments; // llega como String desde SearchViewModel
             return MaterialPageRoute(
-              builder: (_) => ExamTakeScreen(exam: exam),
+              builder: (_) => NoteDetailScreenLibrary(id: noteId),
+            );
+          case AppRoutes.publicationDetailLibrary:
+            final pubId = settings.arguments as String;
+            return MaterialPageRoute(
+              builder: (_) => PublicationLibraryDetailScreen(id: pubId),
+            );
+          case AppRoutes.examTake:
+            final exam = settings.arguments as ExamItemModel;
+            return MaterialPageRoute(
+              builder: (_) => ExamDependenciesProvider(
+                dependencies: ExamDependencies(),
+                child: ExamTakeScreen(exam: exam),
+              ),
             );
           case AppRoutes.examResult:
             final args = settings.arguments as Map<String, dynamic>;
             return MaterialPageRoute(
-              builder: (_) => ExamResultScreen(
-                exam: args["exam"] as ExamItem?,
-                score: args["score"] as int,
-                grade: args["grade"] as String,
-                correctAnswers: args["correctAnswers"] as int,
-                totalQuestions: args["totalQuestions"] as int,
+              builder: (_) => ExamDependenciesProvider(
+                dependencies: ExamDependencies(),
+                child: ExamResultScreen(
+                  exam: args['exam'] as ExamItemModel?,
+                  score: args["score"] as int,
+                  grade: args["grade"] as String,
+                  correctAnswers: args["correctAnswers"] as int,
+                  totalQuestions: args["totalQuestions"] as int,
+                ),
               ),
             );
           case AppRoutes.settings:
@@ -106,7 +130,12 @@ class MyApp extends StatelessWidget {
           case AppRoutes.aiChat:
             return MaterialPageRoute(builder: (_) => const AiChatScreen());
           case AppRoutes.examHistory:
-            return MaterialPageRoute(builder: (_) => const ExamHistoryScreen());
+            return MaterialPageRoute(
+              builder: (_) => ExamDependenciesProvider(
+                dependencies: ExamDependencies(),
+                child: const ExamHistoryScreen(),
+              ),
+            );
           default:
             return MaterialPageRoute(builder: (_) => const LoginScreen());
         }

@@ -21,6 +21,7 @@ class SearchRemoteDataSource {
   }) async {
     final data = await search(query: query, tipo: tipo);
     return List<Map<String, dynamic>>.from(
-        (data['resultados'] as List?) ?? []);
+      (data['resultados'] as List?) ?? []
+    );
   }
 }
