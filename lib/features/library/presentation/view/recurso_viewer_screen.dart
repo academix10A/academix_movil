@@ -10,6 +10,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:academix/features/library/presentation/view/pdf_ai_viewer_screen.dart';
 
 import 'package:academix/core/themes/app_colors.dart';
 import 'package:academix/core/themes/app_text_styles.dart';
@@ -42,6 +43,14 @@ class _RecursoViewerScreenState extends State<RecursoViewerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Para PDF / Drive PDF, deja que PdfAiViewerScreen maneje su propio Scaffold
+    if (_urlType == UrlType.drive || _urlType == UrlType.pdf) {
+      return PdfAiViewerScreen(
+        pdfUrl: widget.url,
+        title: widget.title,
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -71,7 +80,6 @@ class _RecursoViewerScreenState extends State<RecursoViewerScreen> {
           overflow: TextOverflow.ellipsis,
         ),
         actions: [
-          // Botón abrir en navegador externo
           IconButton(
             onPressed: () async {
               final uri = Uri.parse(widget.url);
@@ -79,8 +87,11 @@ class _RecursoViewerScreenState extends State<RecursoViewerScreen> {
                 await launchUrl(uri, mode: LaunchMode.externalApplication);
               }
             },
-            icon: const Icon(Icons.open_in_new_rounded,
-                color: AppColors.textMuted, size: 20),
+            icon: const Icon(
+              Icons.open_in_new_rounded,
+              color: AppColors.textMuted,
+              size: 20,
+            ),
             tooltip: 'Abrir en navegador',
           ),
         ],
@@ -90,18 +101,10 @@ class _RecursoViewerScreenState extends State<RecursoViewerScreen> {
   }
 
   Widget _buildViewer() {
-    // WebView: Drive, YouTube, Gutenberg, OpenLibrary, Archive, HTML
-    if (UrlDetector.isWebViewType(_urlType)) {
-      final embedUrl = _urlType == UrlType.drive
-          ? UrlDetector.getDriveEmbedUrl(widget.url)
-          : _urlType == UrlType.youtube
-              ? UrlDetector.getYoutubeEmbedUrl(widget.url)
-              : widget.url;
+  // Drive y PDF -> visor PDF con IA
+  
 
-      return _WebViewContent(url: embedUrl, title: widget.title);
-    }
-
-    // PDF nativo (descarga + flutter_pdfview)
+    // PDF nativo (si quieres conservar esta ruta para otros casos)
     if (UrlDetector.isNativePdf(_urlType)) {
       return _PdfContent(url: widget.url, title: widget.title);
     }
@@ -111,12 +114,12 @@ class _RecursoViewerScreenState extends State<RecursoViewerScreen> {
       return _AudioContent(url: widget.url, title: widget.title);
     }
 
-    // Video directo (mp4, etc.)
+    // Video directo
     if (_urlType == UrlType.video) {
       return _VideoFallback(url: widget.url, title: widget.title);
     }
 
-    // Unknown — botón para abrir externamente
+    // Unknown
     return _UnknownContent(url: widget.url);
   }
 }

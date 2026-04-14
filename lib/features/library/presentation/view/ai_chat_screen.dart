@@ -1,30 +1,18 @@
-import 'package:flutter/material.dart';
-import 'package:academix/core/constants/app_spacing.dart';
-import 'package:academix/core/themes/app_text_styles.dart';
-import 'package:academix/core/themes/app_colors.dart';
 import 'package:academix/core/constants/app_radius.dart';
-import 'package:academix/features/library/presentation/viewmodel/ai_viewmodel.dart';
+import 'package:academix/core/constants/app_spacing.dart';
+import 'package:academix/core/themes/app_colors.dart';
+import 'package:academix/core/themes/app_text_styles.dart';
 import 'package:academix/features/library/domain/entities/ai_message_entity.dart';
-
-/// Minimal AiService implementation for development.
-/// Replace with a real HTTP-backed implementation when the AI endpoint is ready.
-class _DevAiService implements AiService {
-  @override
-  Future<String> sendMessage({
-    required String message,
-    required String context,
-  }) async {
-    // TODO: Replace with real API call, e.g.:
-    // final response = await DioClient.dio.post('/ai/chat', data: {...});
-    // return response.data['reply'];
-    await Future.delayed(const Duration(milliseconds: 800));
-    return 'Respuesta IA sobre "$context": esta es una respuesta de ejemplo. '
-        'Conecta tu endpoint real en _DevAiService.';
-  }
-}
+import 'package:academix/features/library/presentation/viewmodel/ai_viewmodel.dart';
+import 'package:flutter/material.dart';
 
 class AiChatScreen extends StatefulWidget {
-  const AiChatScreen({super.key});
+  final String? initialContext;
+
+  const AiChatScreen({
+    super.key,
+    this.initialContext,
+  });
 
   @override
   State<AiChatScreen> createState() => _AiChatScreenState();
@@ -32,19 +20,42 @@ class AiChatScreen extends StatefulWidget {
 
 class _AiChatScreenState extends State<AiChatScreen> {
   late final AiViewModel vm;
+  late final ScrollController _scrollController;
+  late final Listenable _merged;
 
   @override
   void initState() {
     super.initState();
-    // DI: swap _DevAiService() for your real AiServiceImpl() when ready.
-    vm = AiViewModel(
-      aiService: _DevAiService(),
-      isPremiumUser: false, // TODO: pass from user session
-    );
+    vm = AiViewModel();
+    _scrollController = ScrollController();
+    _merged = Listenable.merge([
+      vm.messages,
+      vm.isLoading,
+      vm.contextText,
+      vm.quota,
+      vm.suggestions,
+      vm.bannerMessage,
+    ]);
+
+    vm.initialize(initialContext: widget.initialContext);
+    vm.messages.addListener(_scrollToBottomSoon);
+  }
+
+  void _scrollToBottomSoon() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent + 120,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
+    });
   }
 
   @override
   void dispose() {
+    vm.messages.removeListener(_scrollToBottomSoon);
+    _scrollController.dispose();
     vm.dispose();
     super.dispose();
   }
@@ -54,203 +65,300 @@ class _AiChatScreenState extends State<AiChatScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Row(
-                children: [
-                  const Icon(Icons.smart_toy,
-                      color: AppColors.primary, size: 28),
-                  const SizedBox(width: AppSpacing.md),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+        child: AnimatedBuilder(
+          animation: _merged,
+          builder: (context, _) {
+            final quota = vm.quota.value;
+            final messages = vm.messages.value;
+            final loading = vm.isLoading.value;
+            final contextText = vm.contextText.value;
+            final blocked = vm.isBlocked;
+            final suggestions = vm.suggestions.value;
+            final banner = vm.bannerMessage.value;
+            final canSend = !loading && !blocked && contextText.isNotEmpty;
+
+            return Column(
+              children: [
+                _buildHeader(quota),
+                Expanded(
+                  child: ListView(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(AppSpacing.lg),
                     children: [
-                      Text(
-                        'Academix IA',
-                        style: AppTextStyles.h1
-                            .copyWith(color: AppColors.primary),
-                      ),
-                      ValueListenableBuilder<bool>(
-                        valueListenable: vm.isPremium,
-                        builder: (context, isPremium, _) => Text(
-                          isPremium
-                              ? 'Premium Activado'
-                              : 'Requiere Premium',
-                          style: AppTextStyles.caption.copyWith(
-                            color: isPremium
-                                ? AppColors.success
-                                : AppColors.warning,
+                      _buildContextCard(contextText, blocked, loading),
+                      if (banner != null && banner.trim().isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        _buildBanner(banner, blocked),
+                      ],
+                      if (contextText.isNotEmpty && !vm.hasInitialAnswer) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: canSend ? vm.askForSelectedText : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: AppColors.background,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.circular(AppRadius.full),
+                              ),
+                            ),
+                            icon: loading
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: AppColors.background,
+                                    ),
+                                  )
+                                : const Icon(Icons.auto_awesome),
+                            label: Text(
+                              blocked
+                                  ? 'Consultas agotadas'
+                                  : loading
+                                      ? 'Consultando…'
+                                      : 'Preguntar a la IA',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.background,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            // Context box
-            ValueListenableBuilder<String>(
-              valueListenable: vm.contextText,
-              builder: (context, contextText, _) => Padding(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                child: Container(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: AppColors.backgroundCard,
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                    border: Border.all(
-                        color: AppColors.primary.withOpacity(0.2)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Contexto:',
-                          style: AppTextStyles.bodySmall
-                              .copyWith(fontWeight: FontWeight.bold)),
-                      Text(
-                        contextText.isEmpty
-                            ? 'Selecciona texto en contenido'
-                            : contextText,
-                      ),
+                      ],
+                      const SizedBox(height: AppSpacing.lg),
+                      if (messages.isEmpty)
+                        _buildEmptyState(contextText.isNotEmpty)
+                      else
+                        ...messages.map(_buildMessageBubble),
+                      if (suggestions.isNotEmpty && messages.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.lg),
+                        Text(
+                          'Profundiza:',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.text,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: suggestions
+                              .map(
+                                (s) => ActionChip(
+                                  label: Text(s),
+                                  onPressed: canSend ? () => vm.sendSuggestion(s) : null,
+                                  backgroundColor: AppColors.backgroundCard,
+                                  side: const BorderSide(color: AppColors.border),
+                                  labelStyle: AppTextStyles.caption.copyWith(
+                                    color: AppColors.text,
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                      ],
+                      const SizedBox(height: 24),
                     ],
                   ),
                 ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(AiQuota? quota) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.md,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.auto_awesome, color: AppColors.primary, size: 28),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Academix IA',
+                      style: AppTextStyles.h1.copyWith(
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      quota?.labelResumen ?? 'Cargando cuota de IA…',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContextCard(String contextText, bool blocked, bool loading) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundCard,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.menu_book_rounded,
+                  size: 18, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Text(
+                'Texto seleccionado',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.text,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            contextText.isEmpty
+                ? 'Abre un PDF, selecciona un fragmento y luego pregúntale a la IA.'
+                : contextText,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: contextText.isEmpty ? AppColors.textMuted : AppColors.text,
+            ),
+          ),
+          if (blocked) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Ya agotaste tus consultas diarias de IA.',
+              style: AppTextStyles.caption.copyWith(color: AppColors.error),
+            ),
+          ] else if (loading) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Consultando…',
+              style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+            ),
+          ]
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBanner(String message, bool isError) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: isError
+            ? AppColors.error.withOpacity(0.12)
+            : AppColors.accent.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(
+          color: isError
+              ? AppColors.error.withOpacity(0.35)
+              : AppColors.accent.withOpacity(0.35),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isError ? Icons.warning_amber_rounded : Icons.info_outline_rounded,
+            color: isError ? AppColors.error : AppColors.accent,
+            size: 18,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              message,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.text,
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
 
-            // Chat messages
-            Expanded(
-              child: ValueListenableBuilder<List<AiMessageEntity>>(
-                valueListenable: vm.messages,
-                builder: (context, messages, _) {
-                  if (messages.isEmpty) {
-                    return Center(
-                      child: Text(
-                        'Empieza seleccionando texto en cualquier recurso',
-                        style: AppTextStyles.body
-                            .copyWith(color: AppColors.textMuted),
-                        textAlign: TextAlign.center,
-                      ),
-                    );
-                  }
-                  return ListView.builder(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    itemCount: messages.length,
-                    itemBuilder: (context, index) {
-                      final msg = messages[index];
-                      final isUser = msg.isUser;
-                      return Align(
-                        alignment: isUser
-                            ? Alignment.centerRight
-                            : Alignment.centerLeft,
-                        child: Container(
-                          constraints: BoxConstraints(
-                            maxWidth:
-                                MediaQuery.of(context).size.width * 0.75,
-                          ),
-                          margin: const EdgeInsets.symmetric(
-                              vertical: AppSpacing.xs),
-                          padding: const EdgeInsets.all(AppSpacing.md),
-                          decoration: BoxDecoration(
-                            color: isUser
-                                ? AppColors.primary
-                                : AppColors.backgroundCard,
-                            borderRadius:
-                                BorderRadius.circular(AppRadius.md),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: isUser
-                                ? CrossAxisAlignment.end
-                                : CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                msg.message,
-                                style: AppTextStyles.body.copyWith(
-                                  color: isUser
-                                      ? AppColors.background
-                                      : AppColors.text,
-                                ),
-                              ),
-                              const SizedBox(height: AppSpacing.xs),
-                              Text(
-                                _formatTime(msg.timestamp),
-                                style: AppTextStyles.caption
-                                    .copyWith(color: AppColors.textMuted),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
+  Widget _buildEmptyState(bool hasContext) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundCard,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        children: [
+          const Icon(Icons.smart_toy_outlined,
+              color: AppColors.primary, size: 42),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            hasContext
+                ? 'Toca el botón para obtener una explicación del texto seleccionado.'
+                : 'Selecciona texto dentro del PDF para comenzar.',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.body.copyWith(color: AppColors.textMuted),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMessageBubble(AiMessageEntity msg) {
+    final isUser = msg.isUser;
+
+    return Align(
+      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 360),
+        margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: isUser ? AppColors.primary : AppColors.backgroundCard,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        child: Column(
+          crossAxisAlignment:
+              isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          children: [
+            Text(
+              msg.message,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: isUser ? AppColors.background : AppColors.text,
               ),
             ),
-
-            // Input
-            ValueListenableBuilder<bool>(
-              valueListenable: vm.isPremium,
-              builder: (context, isPremium, _) {
-                return Container(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  decoration: BoxDecoration(
-                    color: AppColors.background,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.border.withOpacity(0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, -2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: vm.messageController,
-                          enabled: isPremium,
-                          decoration: InputDecoration(
-                            hintText: isPremium
-                                ? 'Pregunta sobre el contexto...'
-                                : 'Premium requerido',
-                            hintStyle: AppTextStyles.bodySmall
-                                .copyWith(color: AppColors.textMuted),
-                            filled: true,
-                            fillColor: AppColors.backgroundCard,
-                            prefixIcon: ValueListenableBuilder<bool>(
-                              valueListenable: vm.isLoading,
-                              builder: (context, loading, _) => loading
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: AppColors.primary),
-                                    )
-                                  : const Icon(Icons.send,
-                                      color: AppColors.textMuted),
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius:
-                                  BorderRadius.circular(AppRadius.full),
-                              borderSide: BorderSide.none,
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.lg,
-                              vertical: AppSpacing.md,
-                            ),
-                          ),
-                          onSubmitted:
-                              isPremium ? (_) => vm.sendMessage() : null,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
+            const SizedBox(height: 6),
+            Text(
+              _formatTime(msg.timestamp),
+              style: AppTextStyles.caption.copyWith(
+                color: isUser
+                    ? AppColors.background.withOpacity(0.75)
+                    : AppColors.textMuted,
+              ),
             ),
           ],
         ),
@@ -259,7 +367,6 @@ class _AiChatScreenState extends State<AiChatScreen> {
   }
 
   String _formatTime(DateTime time) {
-    return '${time.hour.toString().padLeft(2, '0')}:'
-        '${time.minute.toString().padLeft(2, '0')}';
+    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
   }
 }
