@@ -55,6 +55,13 @@ class ExamsViewModel {
     loadExams();
   }
 
+  Future<void> refresh() async {
+    await Future.wait([
+      loadExams(),  // usa los métodos que ya tengas
+      // loadCompletedExams(),
+    ]);
+  }
+
   Future<void> loadExams() async {
     isLoading.value = true;
     errorMessage.value = null;

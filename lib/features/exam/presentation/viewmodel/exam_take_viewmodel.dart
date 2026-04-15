@@ -74,9 +74,11 @@ class ExamTakeViewModel extends ChangeNotifier {
   }
 
   void selectOption(int idPregunta, int idOpcion) {
-    // Regla: no se puede cambiar una respuesta ya guardada
-    if (_answers.containsKey(idPregunta)) return;
-    _answers[idPregunta] = idOpcion;
+    if (_answers[idPregunta] == idOpcion) {
+      _answers.remove(idPregunta); // Deselecciona si toca la misma
+    } else {
+      _answers[idPregunta] = idOpcion;
+    }
     notifyListeners();
   }
 

@@ -23,6 +23,10 @@ class _ExamsScreenState extends State<ExamsScreen> {
   late final ExamsViewModel vm;
   bool _initialized = false;
 
+  Future<void> _onRefresh() async {
+    await vm.refresh();
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -51,7 +55,13 @@ class _ExamsScreenState extends State<ExamsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _Header(vm: vm),
-            Expanded(child: _Body(vm: vm)),
+            // Expanded(child: _Body(vm: vm)),
+            Expanded(
+              child: _Body(
+                vm: vm,
+                onRefresh: _onRefresh,
+              ),
+            ),
           ],
         ),
       ),
@@ -194,10 +204,19 @@ class _Header extends StatelessWidget {
   }
 }
 
+// class _Body extends StatelessWidget {
+//   final ExamsViewModel vm;
+
+//   const _Body({required this.vm});
+
 class _Body extends StatelessWidget {
   final ExamsViewModel vm;
+  final Future<void> Function() onRefresh;
 
-  const _Body({required this.vm});
+  const _Body({
+    required this.vm,
+    required this.onRefresh,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -208,21 +227,35 @@ class _Body extends StatelessWidget {
           return const Center(
               child: CircularProgressIndicator(color: AppColors.primary));
         }
-        return SingleChildScrollView(
-          padding: EdgeInsets.only(
-            left: AppSpacing.lg,
-            right: AppSpacing.lg,
-            top: AppSpacing.sm,
-            bottom: MediaQuery.of(context).padding.bottom + 100,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _ErrorBanner(vm: vm),
-              _AvailableSection(vm: vm),
-              _CompletedSection(vm: vm),
-              const SizedBox(height: AppSpacing.xxl),
-            ],
+        // return SingleChildScrollView(
+        //   padding: EdgeInsets.only(
+        //     left: AppSpacing.lg,
+        //     right: AppSpacing.lg,
+        //     top: AppSpacing.sm,
+        //     bottom: MediaQuery.of(context).padding.bottom + 100,
+        //   ),
+        //   child: Column(
+        return RefreshIndicator(
+          onRefresh: onRefresh,
+          color: AppColors.primary,
+          backgroundColor: AppColors.backgroundCard,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.only(
+              left: AppSpacing.lg,
+              right: AppSpacing.lg,
+              top: AppSpacing.sm,
+              bottom: MediaQuery.of(context).padding.bottom + 100,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _ErrorBanner(vm: vm),
+                _AvailableSection(vm: vm),
+                _CompletedSection(vm: vm),
+                const SizedBox(height: AppSpacing.xxl),
+              ],
+            ),
           ),
         );
       },

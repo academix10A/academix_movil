@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">127.0.0.1</domain>
         <domain includeSubdomains="true">localhost</domain>
@@ -7,6 +8,8 @@
         <domain includeSubdomains="true">paypal.com</domain>
         <domain includeSubdomains="true">paypalobjects.com</domain>
         <domain includeSubdomains="true">c.paypal.com</domain>
+        <domain includeSubdomains="true">192.168.1.76</domain>
+        <domain includeSubdomains="true">academix.homes</domain>
         <trust-anchors>
             <certificates src="system"/>
             <certificates src="user"/>

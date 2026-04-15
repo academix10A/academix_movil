@@ -123,6 +123,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     : _LibraryContent(
                         key: const ValueKey('library-content'),
                         vm: vm,
+                        onRefresh: () async => _vm?.loadResources(),
                       ),
               ),
             ),
@@ -398,10 +399,49 @@ class _SearchHeader extends StatelessWidget {
 
 // ─── Contenido: lista de recursos de la biblioteca ─────────────────────────────
 
+// class _LibraryContent extends StatelessWidget {
+//   final LibraryViewModel? vm;
+//   final Future<void> Function() onRefresh; 
+
+//   const _LibraryContent({super.key, required this.vm, required this.onRefresh});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     if (vm == null) {
+//       return const Center(child: CircularProgressIndicator());
+//     }
+
+//     return ValueListenableBuilder<List<LibraryResource>>(
+//       valueListenable: vm!.filteredResources,
+//       builder: (context, resources, _) {
+//         if (resources.isEmpty) {
+//           return Center(
+//             child: Column(
+//               mainAxisSize: MainAxisSize.min,
+//               children: [
+//                 Icon(
+//                   Icons.menu_book_outlined,
+//                   size: 64,
+//                   color: AppColors.textMuted.withOpacity(0.5),
+//                 ),
+//                 const SizedBox(height: AppSpacing.md),
+//                 Text(
+//                   'No hay recursos disponibles',
+//                   style: AppTextStyles.h2.copyWith(
+//                     color: AppColors.textMuted,
+//                     fontSize: 18,
+//                   ),
+//                 ),
+//               ],
+//             ),
+//           );
+//         }
+//         return ListView.separated(
 class _LibraryContent extends StatelessWidget {
   final LibraryViewModel? vm;
+  final Future<void> Function() onRefresh; // <-- nuevo
 
-  const _LibraryContent({super.key, required this.vm});
+  const _LibraryContent({super.key, required this.vm, required this.onRefresh});
 
   @override
   Widget build(BuildContext context) {
@@ -413,49 +453,53 @@ class _LibraryContent extends StatelessWidget {
       valueListenable: vm!.filteredResources,
       builder: (context, resources, _) {
         if (resources.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.menu_book_outlined,
-                  size: 64,
-                  color: AppColors.textMuted.withOpacity(0.5),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  'No hay recursos disponibles',
-                  style: AppTextStyles.h2.copyWith(
-                    color: AppColors.textMuted,
-                    fontSize: 18,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-        return ListView.separated(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            0,
-            AppSpacing.lg,
-            AppSpacing.lg,
-          ),
-          itemCount: resources.length,
-          separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
-          itemBuilder: (context, index) {
-            return Hero(
-              tag: 'book-${resources[index].id}',
-              child: Material(
-                color: Colors.transparent,
-                child: LibraryResourceCard(
-                  resource: resources[index],
-                  onTap: () => vm!.onResourceTap(context, resources[index]),
-                  viewModel: vm!,
+          return ListView( // scrollable para RefreshIndicator
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              SizedBox(height: 200),
+              Center(
+                child: Column(
+                  children: [
+                    Icon(Icons.menu_book_outlined, size: 64,
+                        color: AppColors.textMuted.withOpacity(0.5)),
+                    const SizedBox(height: AppSpacing.md),
+                    Text('No hay recursos disponibles',
+                        style: AppTextStyles.h2.copyWith(
+                            color: AppColors.textMuted, fontSize: 18)),
+                  ],
                 ),
               ),
-            );
-          },
+            ],
+          );
+        }
+        return RefreshIndicator(
+          onRefresh: onRefresh,
+          color: AppColors.primary,
+          backgroundColor: AppColors.backgroundCard,
+          child: ListView.separated(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              0,
+              AppSpacing.lg,
+              AppSpacing.lg,
+            ),
+            itemCount: resources.length,
+            separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
+            itemBuilder: (context, index) {
+              return Hero(
+                tag: 'book-${resources[index].id}',
+                child: Material(
+                  color: Colors.transparent,
+                  child: LibraryResourceCard(
+                    resource: resources[index],
+                    onTap: () => vm!.onResourceTap(context, resources[index]),
+                    viewModel: vm!,
+                  ),
+                ),
+              );
+            },
+          ),
         );
       },
     );
