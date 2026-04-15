@@ -45,6 +45,7 @@ class MyApp extends StatelessWidget {
       title: 'Academix',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
+      navigatorKey: DioClient.navigatorKey,
       initialRoute: AppRoutes.splash,
       onGenerateRoute: (settings) {
         switch (settings.name) {

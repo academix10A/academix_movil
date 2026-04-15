@@ -19,6 +19,10 @@ class _NotesScreenState extends State<NotesScreen> {
   // El ViewModel se obtiene desde DI, nunca se instancia directamente en la View.
   late final NotesViewModel vm;
 
+  Future<void> _onRefresh() async {
+    await vm.loadNotes();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -162,38 +166,46 @@ class _NotesScreenState extends State<NotesScreen> {
               child: ValueListenableBuilder<bool>(
                 valueListenable: vm.isLoading,
                 builder: (context, loading, _) {
-                  if (loading) {
+                  if (loading && vm.filteredNotes.value.isEmpty) {
                     return const Center(child: CircularProgressIndicator());
                   }
-                  return ValueListenableBuilder<List<NoteItem>>(
-                    valueListenable: vm.filteredNotes,
-                    builder: (context, notes, _) {
-                      if (notes.isEmpty) {
-                        return Center(
-                          child: Text(
-                            "No se encontraron notas",
-                            style: AppTextStyles.body
-                                .copyWith(color: AppColors.textMuted),
+                  return RefreshIndicator(
+                    onRefresh: _onRefresh,
+                    color: AppColors.primary,
+                    backgroundColor: AppColors.backgroundCard,
+                    child: ValueListenableBuilder<List<NoteItem>>(
+                      valueListenable: vm.filteredNotes,
+                      builder: (context, notes, _) {
+                        if (notes.isEmpty) {
+                          // ListView vacío pero scrollable para que RefreshIndicator funcione
+                          return ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: [
+                              SizedBox(height: 200),
+                              Center(
+                                child: Text(
+                                  'No se encontraron notas',
+                                  style: AppTextStyles.body.copyWith(color: AppColors.textMuted),
+                                ),
+                              ),
+                            ],
+                          );
+                        }
+                        return ListView.separated(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.lg,
+                            vertical: AppSpacing.md,
+                          ),
+                          itemCount: notes.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
+                          itemBuilder: (context, index) => NoteCard(
+                            note: notes[index],
+                            onTap: () => vm.onNoteTap(context, notes[index]),
                           ),
                         );
-                      }
-                      return ListView.separated(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.lg,
-                          vertical: AppSpacing.md,
-                        ),
-                        itemCount: notes.length,
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(height: AppSpacing.md),
-                        itemBuilder: (context, index) {
-                          return NoteCard(
-                            note: notes[index],
-                            onTap: () =>
-                                vm.onNoteTap(context, notes[index]),
-                          );
-                        },
-                      );
-                    },
+                      },
+                    ),
                   );
                 },
               ),

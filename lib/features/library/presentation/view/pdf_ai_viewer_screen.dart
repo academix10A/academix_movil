@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:academix/core/constants/app_spacing.dart';
 import 'package:academix/core/themes/app_colors.dart';
 import 'package:academix/core/themes/app_text_styles.dart';

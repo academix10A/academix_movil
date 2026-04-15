@@ -255,6 +255,7 @@ class _PublicationsScreenState extends State<PublicationsScreen> {
                               );
                             }
                             return ListView.separated(
+                              physics: const AlwaysScrollableScrollPhysics(),
                               padding: const EdgeInsets.symmetric(
                                   horizontal: AppSpacing.lg,
                                   vertical: AppSpacing.md),
