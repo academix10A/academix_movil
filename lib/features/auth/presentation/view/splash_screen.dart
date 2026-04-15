@@ -37,9 +37,10 @@ class _SplashScreenState extends State<SplashScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
             // Logo container animado
             TweenAnimationBuilder<double>(
               tween: Tween(begin: 0, end: 1),
@@ -83,29 +84,40 @@ class _SplashScreenState extends State<SplashScreen> {
             const SizedBox(height: AppSpacing.xl),
 
             // Título
-            Text(
-              'ACADEMIX',
-              style: AppTextStyles.display.copyWith(
-                fontSize: 42,
-                letterSpacing: 3,
-                color: AppColors.primary,
-                shadows: [
-                  Shadow(
-                    color: AppColors.primary.withOpacity(0.3),
-                    offset: const Offset(0, 4),
-                    blurRadius: 8,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  'ACADEMIX',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.display.copyWith(
+                    fontSize: 42,
+                    letterSpacing: 3,
+                    color: AppColors.primary,
+                    shadows: [
+                      Shadow(
+                        color: AppColors.primary.withOpacity(0.3),
+                        offset: const Offset(0, 4),
+                        blurRadius: 8,
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
 
             const SizedBox(height: AppSpacing.md),
 
-            Text(
-              'Tu biblioteca educativa',
-              style: AppTextStyles.h1.copyWith(
-                color: AppColors.textMuted,
-                fontSize: 18,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: Text(
+                'Tu biblioteca educativa',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.h1.copyWith(
+                  color: AppColors.textMuted,
+                  fontSize: 18,
+                ),
               ),
             ),
 

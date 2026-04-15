@@ -24,7 +24,10 @@ class PdfAiViewerScreen extends StatefulWidget {
 
 class _PdfAiViewerScreenState extends State<PdfAiViewerScreen> {
   late final WebViewController _controller;
+
   bool _loading = true;
+  bool _showAiButton = false;
+  String _selectedText = '';
 
   String _backendRoot(String apiBase) {
     final clean = apiBase.replaceAll(RegExp(r'/+$'), '');
@@ -32,6 +35,54 @@ class _PdfAiViewerScreenState extends State<PdfAiViewerScreen> {
       return clean.substring(0, clean.length - 4);
     }
     return clean;
+  }
+
+  Future<void> _openAiChat() async {
+    final text = _selectedText.trim();
+    if (text.isEmpty) return;
+
+    try {
+      await _controller.runJavaScript('clearSelectionFromApp();');
+    } catch (e) {
+      debugPrint('Error clearing selection: $e');
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      _showAiButton = false;
+    });
+
+    await Future.delayed(const Duration(milliseconds: 120));
+
+    if (!mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AiChatScreen(initialContext: text),
+      ),
+    );
+  }
+
+  void _handleSelectionChanged(String text) {
+    final clean = text.trim();
+
+    if (!mounted) return;
+
+    setState(() {
+      _selectedText = clean;
+      _showAiButton = clean.isNotEmpty;
+    });
+  }
+
+  void _handleSelectionCleared() {
+    if (!mounted) return;
+
+    setState(() {
+      _selectedText = '';
+      _showAiButton = false;
+    });
   }
 
   @override
@@ -58,16 +109,22 @@ class _PdfAiViewerScreenState extends State<PdfAiViewerScreen> {
             final data = jsonDecode(raw) as Map<String, dynamic>;
             final type = data['type']?.toString();
 
-            if (type == 'ask_ai') {
-              final text = data['text']?.toString().trim() ?? '';
-              if (text.isEmpty) return;
+            switch (type) {
+              case 'selection_changed':
+                final text = data['text']?.toString() ?? '';
+                _handleSelectionChanged(text);
+                break;
 
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => AiChatScreen(initialContext: text),
-                ),
-              );
+              case 'selection_cleared':
+                _handleSelectionCleared();
+                break;
+
+              case 'ask_ai':
+                final text = data['text']?.toString().trim() ?? '';
+                if (text.isEmpty) return;
+                _handleSelectionChanged(text);
+                _openAiChat();
+                break;
             }
           } catch (e) {
             debugPrint('SelectionChannel parse error: $e');
@@ -79,15 +136,13 @@ class _PdfAiViewerScreenState extends State<PdfAiViewerScreen> {
           onNavigationRequest: (request) {
             final uri = Uri.tryParse(request.url);
 
-            if (uri != null && uri.scheme == 'academix' && uri.host == 'ask-ai') {
+            if (uri != null &&
+                uri.scheme == 'academix' &&
+                uri.host == 'ask-ai') {
               final text = uri.queryParameters['text']?.trim() ?? '';
               if (text.isNotEmpty) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AiChatScreen(initialContext: text),
-                  ),
-                );
+                _handleSelectionChanged(text);
+                _openAiChat();
               }
               return NavigationDecision.prevent;
             }
@@ -95,10 +150,16 @@ class _PdfAiViewerScreenState extends State<PdfAiViewerScreen> {
             return NavigationDecision.navigate;
           },
           onPageStarted: (_) {
-            if (mounted) setState(() => _loading = true);
+            if (!mounted) return;
+            setState(() {
+              _loading = true;
+              _showAiButton = false;
+              _selectedText = '';
+            });
           },
           onPageFinished: (_) {
-            if (mounted) setState(() => _loading = false);
+            if (!mounted) return;
+            setState(() => _loading = false);
           },
           onWebResourceError: (error) {
             debugPrint('WEBVIEW ERROR: ${error.description}');
@@ -127,29 +188,73 @@ class _PdfAiViewerScreenState extends State<PdfAiViewerScreen> {
       ),
       body: Stack(
         children: [
-          const Positioned.fill(child: ColoredBox(color: Color(0xFF1E1E1E))),
-          WebViewWidget(controller: _controller),
-          if (_loading) const Center(child: CircularProgressIndicator()),
+          const Positioned.fill(
+            child: ColoredBox(color: Color(0xFF1E1E1E)),
+          ),
+
+          Positioned.fill(
+            child: WebViewWidget(controller: _controller),
+          ),
+
+          if (_loading)
+            const Center(
+              child: CircularProgressIndicator(),
+            ),
+
           Positioned(
             left: AppSpacing.md,
             right: AppSpacing.md,
             bottom: AppSpacing.md,
             child: IgnorePointer(
               ignoring: true,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.35),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text(
-                  'Mantén presionado sobre el texto para seleccionarlo y preguntarle a la IA.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 180),
+                opacity: _showAiButton ? 0.0 : 1.0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.35),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text(
+                    'Mantén presionado sobre el texto para seleccionarlo y preguntarle a la IA.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
+
+          if (_showAiButton)
+            Positioned(
+              right: AppSpacing.md,
+              bottom: 72,
+              child: SafeArea(
+                minimum: const EdgeInsets.only(bottom: 8),
+                child: Material(
+                  color: Colors.transparent,
+                  child: FloatingActionButton.extended(
+                    heroTag: 'pdf_ai_fab',
+                    onPressed: _openAiChat,
+                    backgroundColor: const Color(0xFFD4AF37),
+                    foregroundColor: const Color(0xFF0F2340),
+                    elevation: 8,
+                    icon: const Icon(Icons.auto_awesome),
+                    label: const Text(
+                      'Preguntar a la IA',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

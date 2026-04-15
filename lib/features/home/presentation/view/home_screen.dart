@@ -88,7 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 /// CARD OFFLINE MEJORADA
                 Container(
                   width: double.infinity,
-                  height: 120,
+                  constraints: const BoxConstraints(minHeight: 120),
                   margin: const EdgeInsets.only(bottom: AppSpacing.xl),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -112,8 +112,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       borderRadius: BorderRadius.circular(AppRadius.lg),
                       onTap: () => AppNavigator.push(context, AppRoutes.offline),
                       child: Padding(
-                        padding: const EdgeInsets.all(AppSpacing.lg),
-                        child: Row(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Container(
                               padding: const EdgeInsets.all(16),
@@ -133,27 +134,34 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             const SizedBox(width: AppSpacing.lg),
                             Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    "Contenido Offline",
-                                    style: AppTextStyles.h2.copyWith(
-                                      color: AppColors.text,
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  "Contenido\nOffline",
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTextStyles.h2.copyWith(
+                                    color: AppColors.text,
+                                    fontWeight: FontWeight.w700,
+                                    height: 1.1,
                                   ),
-                                  const SizedBox(height: AppSpacing.xs),
-                                  Text(
-                                    "Accede a tus recursos sin conexión",
-                                    style: AppTextStyles.bodySmall.copyWith(
-                                      color: AppColors.textMuted,
-                                    ),
+                                ),
+                                const SizedBox(height: AppSpacing.xs),
+                                Text(
+                                  "Accede a tus recursos sin conexión",
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: AppColors.textMuted,
+                                    height: 1.2,
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
+                          ),
                             Icon(
                               Icons.arrow_forward_ios,
                               color: AppColors.textMuted,
@@ -187,23 +195,28 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: ValueListenableBuilder<Map<String, dynamic>>(
                     valueListenable: vm.examProgress,
                     builder: (context, progress, _) {
-                      return Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _buildStatItem(
-                            "Exámenes realizados",
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: _buildStatItem(
+                            "Exámenes\nrealizados",
                             "${progress['total_examenes_realizados'] ?? 0}",
                           ),
-                          _buildStatItem(
+                        ),
+                        Expanded(
+                          child: _buildStatItem(
                             "Completados",
                             "${progress['examenes_completados'] ?? 0}",
                           ),
-                          _buildStatItem(
+                        ),
+                        Expanded(
+                          child: _buildStatItem(
                             "Promedio",
                             "${progress['promedio_calificacion'] ?? 0}",
                           ),
-                        ],
-                      );
+                        ),
+                      ],
+                    );
                     },
                   ),
                 ),
@@ -344,20 +357,29 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildStatItem(String label, String value) {
+    Widget _buildStatItem(String label, String value) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
           style: AppTextStyles.h1.copyWith(
             color: AppColors.primary,
             fontSize: 24,
           ),
         ),
+        const SizedBox(height: 4),
         Text(
           label,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
           style: AppTextStyles.bodySmall.copyWith(
             color: AppColors.textMuted,
+            height: 1.15,
           ),
         ),
       ],
