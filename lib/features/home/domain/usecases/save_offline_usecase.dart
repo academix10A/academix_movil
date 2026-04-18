@@ -1,9 +1,11 @@
-import '../repositories/offline_repository.dart';
+import 'package:academix/features/home/data/datasources/offline_local_datasource.dart';
+import 'package:academix/features/home/data/repositories/offline_repository_impl.dart';
 
 class SaveOfflineUseCase {
-  final OfflineRepository repository;
-  SaveOfflineUseCase(this.repository);
+  final OfflineRepositoryImpl _repo;
 
-  Future<void> call(Map<String, dynamic> recurso) =>
-      repository.guardar(recurso);
+  SaveOfflineUseCase(this._repo);
+
+  Future<GuardarResultado> call(Map<String, dynamic> recurso) =>
+      _repo.guardarConResultado(recurso);
 }

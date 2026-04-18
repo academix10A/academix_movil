@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:academix/core/constants/app_spacing.dart';
 import 'package:academix/core/themes/app_text_styles.dart';
@@ -8,6 +7,7 @@ import 'package:academix/core/constants/app_radius.dart';
 import 'package:academix/features/library/data/models/library_resource_ui_model.dart';
 import 'package:academix/features/library/presentation/view/book_detail_screen.dart';
 import 'package:academix/features/library/presentation/view/pdf_ai_viewer_screen.dart';
+import 'package:academix/features/library/presentation/viewmodel/url_detector.dart';
 import 'package:academix/features/home/data/datasources/offline_local_datasource.dart';
 import '../viewmodel/offline_di.dart';
 import '../viewmodel/offline_viewmodel.dart';
@@ -85,45 +85,65 @@ class _OfflineTile extends StatelessWidget {
 
   const _OfflineTile({required this.item, required this.vm});
 
+  // Usa UrlDetector como única fuente de verdad (igual que el resto de la app)
+  UrlType get _urlType => UrlDetector.detect(item.urlArchivo);
+
   IconData get _icono {
-    final url = item.urlArchivo ?? '';
-    if (url.contains('youtu.be') || url.contains('youtube.com')) {
-      return Icons.play_circle_outline_rounded;
+    switch (_urlType) {
+      case UrlType.youtube:
+      case UrlType.video:
+        return Icons.play_circle_outline_rounded;
+      case UrlType.pdf:
+      case UrlType.drive:
+        return Icons.picture_as_pdf_rounded;
+      case UrlType.audio:
+        return Icons.headphones_rounded;
+      case UrlType.html:
+      case UrlType.gutenberg:
+      case UrlType.openLibrary:
+      case UrlType.archive:
+        return Icons.language_rounded;
+      default:
+        return item.urlArchivo?.isNotEmpty == true
+            ? Icons.link_rounded
+            : Icons.article_rounded;
     }
-    if (url.toLowerCase().endsWith('.pdf') ||
-        url.contains('documentos/') ||
-        url.contains('drive.google.com') ||
-        url.contains('docs.google.com')) {
-      return Icons.picture_as_pdf_rounded;
-    }
-    if (url.isNotEmpty) return Icons.language_rounded;
-    return Icons.article_rounded;
   }
 
   Color get _iconColor {
-    final url = item.urlArchivo ?? '';
-    if (url.contains('youtu.be') || url.contains('youtube.com')) {
-      return Colors.red;
+    switch (_urlType) {
+      case UrlType.youtube:
+      case UrlType.video:
+        return Colors.red;
+      case UrlType.pdf:
+      case UrlType.drive:
+        return AppColors.primary;
+      case UrlType.audio:
+        return AppColors.secondary;
+      default:
+        return AppColors.textMuted;
     }
-    if (url.toLowerCase().endsWith('.pdf') ||
-        url.contains('documentos/') ||
-        url.contains('drive.google.com') ||
-        url.contains('docs.google.com')) {
-      return AppColors.primary;
-    }
-    if (url.isNotEmpty) return AppColors.secondary;
-    return AppColors.textMuted;
   }
 
   String get _etiqueta {
-    final url = item.urlArchivo ?? '';
-    if (url.contains('youtu.be') || url.contains('youtube.com')) return 'Video';
-    if (url.toLowerCase().endsWith('.pdf') ||
-        url.contains('documentos/') ||
-        url.contains('drive.google.com') ||
-        url.contains('docs.google.com')) return 'PDF';
-    if (url.isNotEmpty) return 'Web';
-    return 'Texto';
+    switch (_urlType) {
+      case UrlType.youtube:
+      case UrlType.video:
+        return 'Video';
+      case UrlType.pdf:
+      case UrlType.drive:
+        return 'PDF';
+      case UrlType.audio:
+        return 'Audio';
+      case UrlType.html:
+        return 'Web';
+      case UrlType.gutenberg:
+      case UrlType.openLibrary:
+      case UrlType.archive:
+        return 'Libro';
+      default:
+        return item.urlArchivo?.isNotEmpty == true ? 'Enlace' : 'Texto';
+    }
   }
 
   LibraryResource _toUiModel() => LibraryResource(
@@ -154,14 +174,13 @@ class _OfflineTile extends StatelessWidget {
             .leerPdfLocal(item.idRecurso, item.rutaLocal!);
 
         if (!context.mounted) return;
-        Navigator.pop(context); // cerrar loading
+        Navigator.pop(context);
 
         if (pdfBytes == null) {
           _mostrarError(context, 'No se pudo leer el archivo offline.');
           return;
         }
 
-        // Convertir a data URL para PDF.js (sin ninguna llamada de red)
         final b64     = base64Encode(pdfBytes);
         final dataUrl = 'data:application/pdf;base64,$b64';
 
@@ -226,8 +245,7 @@ class _OfflineTile extends StatelessWidget {
           ),
           title: Text(
             item.titulo,
-            style:
-                AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
+            style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
           ),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -248,8 +266,7 @@ class _OfflineTile extends StatelessWidget {
                         horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: _iconColor.withOpacity(0.12),
-                      borderRadius:
-                          BorderRadius.circular(AppRadius.full),
+                      borderRadius: BorderRadius.circular(AppRadius.full),
                     ),
                     child: Text(
                       _etiqueta,
@@ -261,7 +278,6 @@ class _OfflineTile extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 6),
-                  // Ícono de candado si está encriptado
                   if (item.rutaLocal != null) ...[
                     Icon(Icons.lock_outline,
                         size: 11, color: AppColors.textMuted),
@@ -282,8 +298,7 @@ class _OfflineTile extends StatelessWidget {
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.chevron_right_rounded,
-                  color: AppColors.textMuted),
+              Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
               IconButton(
                 icon: Icon(Icons.delete_outline,
                     color: AppColors.error, size: 20),
@@ -312,8 +327,7 @@ class _EmptyState extends StatelessWidget {
           Icon(Icons.cloud_off, size: 80, color: AppColors.textMuted),
           const SizedBox(height: AppSpacing.md),
           Text('No hay contenido offline',
-              style:
-                  AppTextStyles.h2.copyWith(color: AppColors.textMuted)),
+              style: AppTextStyles.h2.copyWith(color: AppColors.textMuted)),
           const SizedBox(height: AppSpacing.sm),
           Text('Descarga recursos para usarlos sin conexión',
               style: AppTextStyles.bodySmall
