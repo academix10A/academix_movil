@@ -234,12 +234,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                     "${progress['examenes_completados'] ?? 0}",
                                   ),
                                 ),
-                                Expanded(
-                                  child: _buildStatItem(
-                                    "Promedio",
-                                    "${progress['promedio_calificacion'] ?? 0}",
-                                  ),
-                                ),
+                                // Expanded(
+                                //   child: _buildStatItem(
+                                //     "Promedio",
+                                //     "${progress['promedio_calificacion'] ?? 0}",
+                                //   ),
+                                // ),
                               ],
                             );
                           },
@@ -249,102 +249,102 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: AppSpacing.lg),
 
                       /// RECURSOS LEÍDOS
-                      Text(
-                        "Recursos leídos",
-                        style: AppTextStyles.h2.copyWith(
-                          color: AppColors.text,
-                        ),
-                      ),
+                      // Text(
+                      //   "Recursos leídos",
+                      //   style: AppTextStyles.h2.copyWith(
+                      //     color: AppColors.text,
+                      //   ),
+                      // ),
 
-                      const SizedBox(height: AppSpacing.md),
+                      // const SizedBox(height: AppSpacing.md),
 
-                      ValueListenableBuilder<List<Map<String, dynamic>>>(
-                        valueListenable: vm.readResources,
-                        builder: (context, resources, _) {
-                          if (resources.isEmpty) {
-                            return Text(
-                              "No hay recursos aún",
-                              style: AppTextStyles.body
-                                  .copyWith(color: AppColors.textMuted),
-                            );
-                          }
+                      // ValueListenableBuilder<List<Map<String, dynamic>>>(
+                      //   valueListenable: vm.readResources,
+                      //   builder: (context, resources, _) {
+                      //     if (resources.isEmpty) {
+                      //       return Text(
+                      //         "No hay recursos aún",
+                      //         style: AppTextStyles.body
+                      //             .copyWith(color: AppColors.textMuted),
+                      //       );
+                      //     }
 
-                          return Column(
-                            children: resources.map((resource) {
-                              return Padding(
-                                padding: const EdgeInsets.only(
-                                    bottom: AppSpacing.md),
-                                child: Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.md),
-                                    onTap: () =>
-                                        vm.onReadResourceTap(context, resource),
-                                    child: Container(
-                                      padding:
-                                          const EdgeInsets.all(AppSpacing.md),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.text,
-                                        borderRadius: BorderRadius.circular(
-                                            AppRadius.md),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  resource['titulo'] ?? '',
-                                                  style:
-                                                      AppTextStyles.body.copyWith(
-                                                    color: AppColors.background,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                                const SizedBox(
-                                                    height: AppSpacing.xs),
-                                                LinearProgressIndicator(
-                                                  value: (resource[
-                                                              'porcentaje_leido'] ??
-                                                          0) /
-                                                      100,
-                                                  backgroundColor:
-                                                      AppColors.textMuted,
-                                                  valueColor:
-                                                      AlwaysStoppedAnimation<
-                                                          Color>(
-                                                    resource['completado'] ==
-                                                            true
-                                                        ? AppColors.success
-                                                        : AppColors.secondary,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          const SizedBox(width: AppSpacing.md),
-                                          Text(
-                                            "${resource['porcentaje_leido'] ?? 0}%",
-                                            style:
-                                                AppTextStyles.bodySmall.copyWith(
-                                              color: AppColors.background,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          );
-                        },
-                      ),
+                      //     return Column(
+                      //       children: resources.map((resource) {
+                      //         return Padding(
+                      //           padding: const EdgeInsets.only(
+                      //               bottom: AppSpacing.md),
+                      //           child: Material(
+                      //             color: Colors.transparent,
+                      //             child: InkWell(
+                      //               borderRadius:
+                      //                   BorderRadius.circular(AppRadius.md),
+                      //               onTap: () =>
+                      //                   vm.onReadResourceTap(context, resource),
+                      //               child: Container(
+                      //                 padding:
+                      //                     const EdgeInsets.all(AppSpacing.md),
+                      //                 decoration: BoxDecoration(
+                      //                   color: AppColors.text,
+                      //                   borderRadius: BorderRadius.circular(
+                      //                       AppRadius.md),
+                      //                 ),
+                      //                 child: Row(
+                      //                   children: [
+                      //                     Expanded(
+                      //                       child: Column(
+                      //                         crossAxisAlignment:
+                      //                             CrossAxisAlignment.start,
+                      //                         children: [
+                      //                           Text(
+                      //                             resource['titulo'] ?? '',
+                      //                             style:
+                      //                                 AppTextStyles.body.copyWith(
+                      //                               color: AppColors.background,
+                      //                               fontWeight: FontWeight.w600,
+                      //                             ),
+                      //                           ),
+                      //                           const SizedBox(
+                      //                               height: AppSpacing.xs),
+                      //                           LinearProgressIndicator(
+                      //                             value: (resource[
+                      //                                         'porcentaje_leido'] ??
+                      //                                     0) /
+                      //                                 100,
+                      //                             backgroundColor:
+                      //                                 AppColors.textMuted,
+                      //                             valueColor:
+                      //                                 AlwaysStoppedAnimation<
+                      //                                     Color>(
+                      //                               resource['completado'] ==
+                      //                                       true
+                      //                                   ? AppColors.success
+                      //                                   : AppColors.secondary,
+                      //                             ),
+                      //                           ),
+                      //                         ],
+                      //                       ),
+                      //                     ),
+                      //                     const SizedBox(width: AppSpacing.md),
+                      //                     Text(
+                      //                       "${resource['porcentaje_leido'] ?? 0}%",
+                      //                       style:
+                      //                           AppTextStyles.bodySmall.copyWith(
+                      //                         color: AppColors.background,
+                      //                       ),
+                      //                     ),
+                      //                   ],
+                      //                 ),
+                      //               ),
+                      //             ),
+                      //           ),
+                      //         );
+                      //       }).toList(),
+                      //     );
+                      //   },
+                      // ),
 
-                      const SizedBox(height: AppSpacing.lg),
+                      // const SizedBox(height: AppSpacing.lg),
 
                       /// RECIENTES
                       Row(
@@ -354,16 +354,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             "Recientes",
                             style: AppTextStyles.h2.copyWith(
                               color: AppColors.text,
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () {},
-                            child: Text(
-                              "Ver todo",
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: AppColors.secondary,
-                                fontWeight: FontWeight.w600,
-                              ),
                             ),
                           ),
                         ],

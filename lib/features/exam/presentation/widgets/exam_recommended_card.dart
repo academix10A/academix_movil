@@ -36,7 +36,7 @@ class ExamRecommendedCard extends StatelessWidget {
                   .copyWith(color: AppColors.textMuted)),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            '${exam.questions} preguntas - ${exam.durationMinutes} minutos - ${exam.difficulty}',
+            '${exam.questions} preguntas - ${exam.difficulty}',
             style:
                 AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted),
           ),

@@ -124,31 +124,31 @@ class LibraryResourceCard extends StatelessWidget {
                       // Stats row
                       Row(
                         children: [
-                          const Icon(
-                            Icons.access_time_rounded,
-                            size: 12,
-                            color: AppColors.textMuted,
-                          ),
-                          const SizedBox(width: 3),
-                          Text(
-                            '${resource.durationMinutes} min',
-                            style: AppTextStyles.caption.copyWith(
-                              color: AppColors.textMuted,
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          const Icon(
-                            Icons.description_outlined,
-                            size: 12,
-                            color: AppColors.textMuted,
-                          ),
-                          const SizedBox(width: 3),
-                          Text(
-                            '${resource.pages} págs',
-                            style: AppTextStyles.caption.copyWith(
-                              color: AppColors.textMuted,
-                            ),
-                          ),
+                          // const Icon(
+                          //   Icons.access_time_rounded,
+                          //   size: 12,
+                          //   color: AppColors.textMuted,
+                          // ),
+                          // const SizedBox(width: 3),
+                          // Text(
+                          //   '${resource.durationMinutes} min',
+                          //   style: AppTextStyles.caption.copyWith(
+                          //     color: AppColors.textMuted,
+                          //   ),
+                          // ),
+                          // const SizedBox(width: AppSpacing.sm),
+                          // const Icon(
+                          //   Icons.description_outlined,
+                          //   size: 12,
+                          //   color: AppColors.textMuted,
+                          // ),
+                          // const SizedBox(width: 3),
+                          // Text(
+                          //   '${resource.pages} págs',
+                          //   style: AppTextStyles.caption.copyWith(
+                          //     color: AppColors.textMuted,
+                          //   ),
+                          // ),
                         ],
                       ),
 
@@ -160,27 +160,27 @@ class LibraryResourceCard extends StatelessWidget {
                             MainAxisAlignment.spaceBetween,
                         children: [
                           // Stars
-                          Row(
-                            children: [
-                              ...List.generate(
-                                5,
-                                (i) => Icon(
-                                  i < 4
-                                      ? Icons.star_rounded
-                                      : Icons.star_border_rounded,
-                                  color: AppColors.primary,
-                                  size: 13,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '4.5',
-                                style: AppTextStyles.caption.copyWith(
-                                  color: AppColors.textMuted,
-                                ),
-                              ),
-                            ],
-                          ),
+                          // Row(
+                          //   children: [
+                          //     ...List.generate(
+                          //       5,
+                          //       (i) => Icon(
+                          //         i < 4
+                          //             ? Icons.star_rounded
+                          //             : Icons.star_border_rounded,
+                          //         color: AppColors.primary,
+                          //         size: 13,
+                          //       ),
+                          //     ),
+                          //     const SizedBox(width: 4),
+                          //     Text(
+                          //       '4.5',
+                          //       style: AppTextStyles.caption.copyWith(
+                          //         color: AppColors.textMuted,
+                          //       ),
+                          //     ),
+                          //   ],
+                          // ),
 
                           // Favorite button
                           ValueListenableBuilder<Set<String>>(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:academix/features/library/data/datasources/search_remote_datasource.dart';
 import 'package:academix/core/routes/app_routes.dart';
+import 'package:academix/features/library/data/models/library_resource_ui_model.dart';
 
 class SearchResult {
   final String id;
@@ -31,7 +32,7 @@ class SearchResult {
         'RECURSO'     => 'resource',
         'NOTA'        => 'note',
         'PUBLICACION' => 'publication',
-        'TEMA'        => 'tema',
+        // 'TEMA'        => 'tema',
         _             => 'resource',
       },
       title: json['titulo'] as String? ?? '',
@@ -93,13 +94,31 @@ class SearchViewModel {
   Future<void> onResultTap(BuildContext context, SearchResult result) async {
     switch (result.type) {
       case 'resource':
-        AppNavigator.push(context, AppRoutes.bookDetail, arguments: result);
+        // AppNavigator.push(context, AppRoutes.bookDetail, arguments: result);
+        final resource = LibraryResource(
+          id: result.id,
+          title: result.title,
+          category: 'General',
+          description: result.preview,
+          durationMinutes: 30,
+          pages: 10,
+          isFavorite: false,
+          urlArchivo: null,
+          contenido: null,
+          idTipo: null,
+        );
+
+        AppNavigator.push(
+          context,
+          AppRoutes.bookDetail,
+          arguments: resource,
+        );
         break;
       case 'note':
         AppNavigator.push(context, AppRoutes.noteDetailLibrary, arguments: result.id);
         break;
       case 'publication':
-        AppNavigator.push(context, AppRoutes.publicationDetail, arguments: result.id);
+        AppNavigator.push(context, AppRoutes.publicationDetailLibrary, arguments: result.id);
         break;
       case 'tema':
         AppNavigator.push(context, AppRoutes.temaDetail, arguments: result.id);

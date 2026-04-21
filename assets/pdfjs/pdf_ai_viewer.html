@@ -2,10 +2,29 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
   <title>PDF IA Viewer</title>
-
   <style>
+    /* * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; width: 100%;
+      background: #1e1e1e; overflow-x: hidden;
+      font-family: Arial, sans-serif;
+    }
+    #viewer { width: 100%; margin: 0; padding: 0; overflow: hidden; }
+    .page {
+      position: relative; background: white;
+      overflow: hidden; margin: 0 0 12px 0; left: 0;
+    }
+    .textLayer {
+      position: absolute; left: 0; top: 0;
+      overflow: hidden; line-height: 1; opacity: 1; user-select: text;
+    }
+    .textLayer span, .textLayer br {
+      color: transparent; position: absolute; white-space: pre;
+      transform-origin: 0% 0%; cursor: text; user-select: text;
+    }
+    canvas { display: block; margin: 0; padding: 0; border: 0; } */
     * {
       box-sizing: border-box;
     }
@@ -17,6 +36,8 @@
       background: #1e1e1e;
       overflow-x: hidden;
       font-family: Arial, sans-serif;
+      -webkit-user-select: text;
+      user-select: text;
     }
 
     #viewer {
@@ -29,154 +50,140 @@
     .page {
       position: relative;
       background: white;
-      overflow: hidden;
       margin: 0 0 12px 0;
-      left: 0;
-    }
-
-    .textLayer {
-      position: absolute;
-      left: 0;
-      top: 0;
       overflow: hidden;
-      line-height: 1;
-      opacity: 1;
-      user-select: text;
-    }
-
-    .textLayer span,
-    .textLayer br {
-      color: transparent;
-      position: absolute;
-      white-space: pre;
-      transform-origin: 0% 0%;
-      cursor: text;
-      user-select: text;
     }
 
     canvas {
       display: block;
-      margin: 0;
-      padding: 0;
-      border: 0;
+      width: 100%;
+      height: auto;
+      pointer-events: none;
+    }
+
+    .textLayer {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      line-height: 1;
+      opacity: 1;
+      user-select: text;
+      -webkit-user-select: text;
+      pointer-events: auto;
+      z-index: 10;
+    }
+
+    .textLayer span,
+    .textLayer br {
+      position: absolute;
+      color: transparent;
+      white-space: pre;
+      cursor: text;
+      transform-origin: 0% 0%;
+      user-select: text;
+      -webkit-user-select: text;
     }
   </style>
-
-  <script src="/static/pdfjs/pdf.min.js"></script>
+  <script src="pdf.min.js"></script>
 </head>
 <body>
   <div id="viewer"></div>
-
   <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = '/static/pdfjs/pdf.worker.min.js';
+    // Usar fake worker (inline) para evitar el error de Worker con file://
+    // en Android WebView. El rendimiento es similar para PDFs normales.
+    // pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdf.worker.min.js';
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'file:///android_asset/flutter_assets/assets/pdfjs/pdf.worker.min.js';
 
     const viewer = document.getElementById('viewer');
-
-    function getPdfUrlFromQuery() {
-      const params = new URLSearchParams(window.location.search);
-      return params.get('pdfUrl');
-    }
+    let _currentUrl = null;
+    let _resizeTimer = null;
 
     function getAvailableWidth() {
-      const vv = window.visualViewport?.width || 0;
-      const iw = window.innerWidth || 0;
-      const dw = document.documentElement.clientWidth || 0;
-      const bw = document.body.clientWidth || 0;
-      return Math.max(280, Math.min(vv || 99999, iw || 99999, dw || 99999, bw || 99999));
+      const vals = [
+        window.visualViewport?.width,
+        window.innerWidth,
+        document.documentElement.clientWidth,
+        document.body.clientWidth,
+      ].filter(v => v && v > 0);
+      return Math.max(280, Math.min(...vals));
     }
 
     async function renderPdf(url) {
+      _currentUrl = url;
       viewer.innerHTML = '';
 
-      const loadingTask = pdfjsLib.getDocument({
-        url: url,
-        withCredentials: false,
-      });
+      try {
+        const loadingTask = pdfjsLib.getDocument({ url, withCredentials: false });
+        const pdf = await loadingTask.promise;
+        const dpr = window.devicePixelRatio || 1;
+        const availableWidth = Math.floor(getAvailableWidth());
 
-      const pdf = await loadingTask.promise;
-      const dpr = window.devicePixelRatio || 1;
-      const availableWidth = Math.floor(getAvailableWidth());
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          const page = await pdf.getPage(pageNum);
+          const baseViewport = page.getViewport({ scale: 1 });
+          const scale = availableWidth / baseViewport.width;
+          const viewport = page.getViewport({ scale });
+          const pageWidth  = Math.floor(availableWidth);
+          const pageHeight = Math.floor(viewport.height);
 
-      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-        const page = await pdf.getPage(pageNum);
+          const pageDiv = document.createElement('div');
+          pageDiv.className = 'page';
+          pageDiv.style.width  = `${pageWidth}px`;
+          pageDiv.style.height = `${pageHeight}px`;
 
-        const baseViewport = page.getViewport({ scale: 1 });
-        const scale = availableWidth / baseViewport.width;
-        const viewport = page.getViewport({ scale });
+          const canvas = document.createElement('canvas');
+          canvas.width  = Math.floor(pageWidth  * dpr);
+          canvas.height = Math.floor(pageHeight * dpr);
+          canvas.style.width  = `${pageWidth}px`;
+          canvas.style.height = `${pageHeight}px`;
+          pageDiv.appendChild(canvas);
 
-        const pageWidth = Math.floor(availableWidth);
-        const pageHeight = Math.floor(viewport.height);
+          const context = canvas.getContext('2d');
+          context.setTransform(dpr, 0, 0, dpr, 0, 0);
+          await page.render({ canvasContext: context, viewport }).promise;
 
-        const pageDiv = document.createElement('div');
-        pageDiv.className = 'page';
-        pageDiv.style.width = `${pageWidth}px`;
-        pageDiv.style.height = `${pageHeight}px`;
+          const textLayerDiv = document.createElement('div');
+          textLayerDiv.className = 'textLayer';
+          textLayerDiv.style.width  = `${pageWidth}px`;
+          textLayerDiv.style.height = `${pageHeight}px`;
+          pageDiv.appendChild(textLayerDiv);
 
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.floor(pageWidth * dpr);
-        canvas.height = Math.floor(pageHeight * dpr);
-        canvas.style.width = `${pageWidth}px`;
-        canvas.style.height = `${pageHeight}px`;
-        pageDiv.appendChild(canvas);
+          const textContent = await page.getTextContent();
+          pdfjsLib.renderTextLayer({
+            textContentSource: textContent,
+            container: textLayerDiv,
+            viewport,
+            textDivs: [],
+          });
 
-        const context = canvas.getContext('2d');
-        context.setTransform(dpr, 0, 0, dpr, 0, 0);
+          viewer.appendChild(pageDiv);
+        }
 
-        await page.render({
-          canvasContext: context,
-          viewport: viewport,
-        }).promise;
-
-        const textLayerDiv = document.createElement('div');
-        textLayerDiv.className = 'textLayer';
-        textLayerDiv.style.width = `${pageWidth}px`;
-        textLayerDiv.style.height = `${pageHeight}px`;
-        pageDiv.appendChild(textLayerDiv);
-
-        const textContent = await page.getTextContent();
-
-        pdfjsLib.renderTextLayer({
-          textContentSource: textContent,
-          container: textLayerDiv,
-          viewport: viewport,
-          textDivs: [],
-        });
-
-        viewer.appendChild(pageDiv);
+        window.scrollTo(0, 0);
+      } catch (e) {
+        console.error('PDF LOAD ERROR:', e?.message || e);
       }
+    }
 
-      document.documentElement.scrollLeft = 0;
-      document.body.scrollLeft = 0;
-      viewer.scrollLeft = 0;
-      window.scrollTo(0, 0);
+    function clearSelectionFromApp() {
+      window.getSelection()?.removeAllRanges();
     }
 
     document.addEventListener('selectionchange', () => {
       const selected = window.getSelection()?.toString()?.trim() || '';
-      if (selected && window.SelectionChannel) {
-        window.SelectionChannel.postMessage(selected);
+      const msg = selected
+        ? JSON.stringify({ type: 'selection_changed', text: selected })
+        : JSON.stringify({ type: 'selection_cleared' });
+      if (window.SelectionChannel) {
+        window.SelectionChannel.postMessage(msg);
       }
     });
 
-    let resizeTimer = null;
-
-    async function loadPdf() {
-      try {
-        const pdfUrl = getPdfUrlFromQuery();
-        if (!pdfUrl) throw new Error('No se recibió pdfUrl');
-        await renderPdf(pdfUrl);
-      } catch (e) {
-        console.error('PDF LOAD ERROR NAME:', e?.name);
-        console.error('PDF LOAD ERROR MESSAGE:', e?.message);
-        console.error('PDF LOAD ERROR FULL:', e);
-      }
-    }
-
-    window.addEventListener('load', loadPdf);
-
     window.addEventListener('resize', () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(loadPdf, 150);
+      clearTimeout(_resizeTimer);
+      _resizeTimer = setTimeout(() => {
+        if (_currentUrl) renderPdf(_currentUrl);
+      }, 150);
     });
   </script>
 </body>

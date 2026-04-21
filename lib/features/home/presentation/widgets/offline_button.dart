@@ -3,6 +3,7 @@ import 'package:academix/core/themes/app_colors.dart';
 import 'package:academix/core/themes/app_text_styles.dart';
 import 'package:academix/core/constants/app_radius.dart';
 import 'package:academix/features/library/domain/entities/library_resource_entity.dart';
+import 'package:academix/features/home/data/datasources/offline_local_datasource.dart';
 import '../viewmodel/offline_di.dart';
 import '../viewmodel/offline_viewmodel.dart';
 
@@ -25,6 +26,8 @@ class _OfflineButtonState extends State<OfflineButton> {
   bool    _guardado = false;
   bool    _cargando = false;
   String? _error;
+  // Advertencia no bloqueante: el recurso se guardó pero el PDF no se descargó
+  String? _advertencia;
 
   @override
   void initState() {
@@ -38,7 +41,6 @@ class _OfflineButtonState extends State<OfflineButton> {
     if (mounted) setState(() => _guardado = esta);
   }
 
-  // Convierte la entity a mapa para el datasource local
   Map<String, dynamic> get _mapa => {
     'id_recurso':  widget.recurso.idRecurso,
     'titulo':      widget.recurso.titulo,
@@ -51,24 +53,40 @@ class _OfflineButtonState extends State<OfflineButton> {
   };
 
   Future<void> _guardar() async {
-    setState(() { _cargando = true; _error = null; });
+    setState(() { _cargando = true; _error = null; _advertencia = null; });
     try {
-      await _vm.guardar(_mapa);
-      if (mounted) setState(() => _guardado = true);
+      final resultado = await _vm.guardar(_mapa);
+      if (!mounted) return;
+
+      if (resultado.pdfFallo) {
+        // El recurso quedó guardado en la BD, pero sin PDF local.
+        // Se puede abrir con red, pero no offline. Avisamos sin bloquear.
+        setState(() {
+          _guardado     = true;
+          _advertencia  = 'Guardado, pero el PDF no se descargó: '
+                          '${resultado.errorDescarga}';
+        });
+      } else {
+        setState(() => _guardado = true);
+      }
     } catch (_) {
-      if (mounted) setState(() => _error = 'No se pudo guardar. Intenta de nuevo.');
+      if (mounted) {
+        setState(() => _error = 'No se pudo guardar. Intenta de nuevo.');
+      }
     } finally {
       if (mounted) setState(() => _cargando = false);
     }
   }
 
   Future<void> _eliminar() async {
-    setState(() { _cargando = true; _error = null; });
+    setState(() { _cargando = true; _error = null; _advertencia = null; });
     try {
       await _vm.eliminar(widget.recurso.idRecurso, widget.recurso.urlArchivo);
       if (mounted) setState(() => _guardado = false);
     } catch (_) {
-      if (mounted) setState(() => _error = 'No se pudo eliminar. Intenta de nuevo.');
+      if (mounted) {
+        setState(() => _error = 'No se pudo eliminar. Intenta de nuevo.');
+      }
     } finally {
       if (mounted) setState(() => _cargando = false);
     }
@@ -97,6 +115,24 @@ class _OfflineButtonState extends State<OfflineButton> {
               style: AppTextStyles.caption.copyWith(color: AppColors.error),
             ),
           ),
+        if (_advertencia != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Row(
+              children: [
+                Icon(Icons.warning_amber_rounded,
+                    size: 12, color: AppColors.warning),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    _advertencia!,
+                    style: AppTextStyles.caption
+                        .copyWith(color: AppColors.warning),
+                  ),
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }
@@ -106,7 +142,8 @@ class _OfflineButtonState extends State<OfflineButton> {
       return _Btn(
         icon: const SizedBox(
           width: 14, height: 14,
-          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+          child: CircularProgressIndicator(
+              strokeWidth: 2, color: Colors.white),
         ),
         label: 'Guardando…',
         color: AppColors.textMuted,
@@ -115,10 +152,17 @@ class _OfflineButtonState extends State<OfflineButton> {
     }
     if (_guardado) {
       return _Btn(
-        icon: const Icon(Icons.check_circle, size: 15, color: Colors.white),
-        label: 'Guardado offline',
-        color: AppColors.success,
-        trailing: const Icon(Icons.delete_outline, size: 14, color: Colors.white70),
+        icon: Icon(
+          _advertencia != null
+              ? Icons.warning_amber_rounded
+              : Icons.check_circle,
+          size: 15,
+          color: Colors.white,
+        ),
+        label: _advertencia != null ? 'Guardado (sin PDF)' : 'Guardado offline',
+        color: _advertencia != null ? AppColors.warning : AppColors.success,
+        trailing: const Icon(Icons.delete_outline,
+            size: 14, color: Colors.white70),
         onTap: _eliminar,
       );
     }
@@ -132,10 +176,10 @@ class _OfflineButtonState extends State<OfflineButton> {
 }
 
 class _Btn extends StatelessWidget {
-  final Widget    icon;
-  final String    label;
-  final Color     color;
-  final Widget?   trailing;
+  final Widget        icon;
+  final String        label;
+  final Color         color;
+  final Widget?       trailing;
   final VoidCallback? onTap;
 
   const _Btn({

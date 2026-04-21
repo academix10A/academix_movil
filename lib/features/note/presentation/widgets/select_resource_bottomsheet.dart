@@ -82,7 +82,7 @@ class _SelectResourceBottomSheetState
     return Container(
       height: MediaQuery.of(context).size.height * 0.8,
       decoration: const BoxDecoration(
-        color: Color(0xFFF8F9FA),
+        color: AppColors.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SafeArea(

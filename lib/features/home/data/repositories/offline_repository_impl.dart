@@ -10,13 +10,20 @@ class OfflineRepositoryImpl implements OfflineRepository {
 
   OfflineRepositoryImpl({required this.local, required this.remote});
 
-  @override
-  Future<void> guardar(Map<String, dynamic> recurso) async {
-    await local.guardarMetadata(recurso);
+  // Retorna GuardarResultado para que SaveOfflineUseCase lo propague a la UI.
+  // El remote.registrar va primero; si falla con 409 (ya existe) se ignora.
+  Future<GuardarResultado> guardarConResultado(
+      Map<String, dynamic> recurso) async {
     try {
       await remote.registrar(recurso['id_recurso'] as int);
     } catch (_) {}
+    return local.guardarMetadata(recurso);
   }
+
+  // Mantiene la firma void del OfflineRepository para no romper otros use cases
+  @override
+  Future<void> guardar(Map<String, dynamic> recurso) =>
+      guardarConResultado(recurso);
 
   @override
   Future<void> eliminar(int idRecurso, String? urlArchivo) async {
@@ -38,7 +45,6 @@ class OfflineRepositoryImpl implements OfflineRepository {
     return rows.map(_fromMap).toList();
   }
 
-  // ── Nuevo: leer bytes desencriptados del PDF ───────────────────────────────
   Future<Uint8List?> leerPdfLocal(int idRecurso, String rutaLocal) =>
       local.leerPdfLocal(idRecurso, rutaLocal);
 
