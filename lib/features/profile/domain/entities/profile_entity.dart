@@ -43,7 +43,7 @@ class UserProfileEntity {
   String get email_ => email;
   String get avatarUrl => fotoPerfil ?? '';
   bool get isActive => estaActivo;
-  String get roleName => nombreRol ?? (rol == 1 ? 'Estudiante' : 'Usuario');
+  String get roleName => nombreRol ?? (rol == 1 ? '' : 'Usuario');
   bool get isPremium => idMembresia != null && idMembresia != 1;
 
   String get memberSince {

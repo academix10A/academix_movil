@@ -273,26 +273,26 @@ class _PremiumScreenState extends State<PremiumScreen>
             ),
           ),
         ),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
-            child: Column(
-              children: [
-                _FaqTile(
-                  question: '¿Tengo garantía de reembolso?',
-                  answer:
-                      'Sí, tienes 7 días de garantía de reembolso. Si no estás satisfecho, te devolvemos tu dinero.',
-                ),
-                const SizedBox(height: 8),
-                _FaqTile(
-                  question: '¿Puedo cancelar en cualquier momento?',
-                  answer:
-                      'Sí, puedes cancelar tu membresía en cualquier momento. Seguirás teniendo acceso hasta el final del período pagado.',
-                ),
-              ],
-            ),
-          ),
-        ),
+        // SliverToBoxAdapter(
+        //   child: Padding(
+        //     padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+        //     child: Column(
+        //       children: [
+        //         _FaqTile(
+        //           question: '¿Tengo garantía de reembolso?',
+        //           answer:
+        //               'Sí, tienes 7 días de garantía de reembolso. Si no estás satisfecho, te devolvemos tu dinero.',
+        //         ),
+        //         const SizedBox(height: 8),
+        //         _FaqTile(
+        //           question: '¿Puedo cancelar en cualquier momento?',
+        //           answer:
+        //               'Sí, puedes cancelar tu membresía en cualquier momento. Seguirás teniendo acceso hasta el final del período pagado.',
+        //         ),
+        //       ],
+        //     ),
+        //   ),
+        // ),
       ],
     );
   }

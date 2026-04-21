@@ -480,15 +480,15 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                         const SizedBox(height: AppSpacing.lg),
                         Row(
                           children: [
-                            _InfoChip(
-                              icon:  Icons.access_time_rounded,
-                              label: '${widget.resource.durationMinutes} min',
-                            ),
-                            const SizedBox(width: AppSpacing.md),
-                            _InfoChip(
-                              icon:  Icons.description_outlined,
-                              label: '${widget.resource.pages} páginas',
-                            ),
+                            // _InfoChip(
+                            //   icon:  Icons.access_time_rounded,
+                            //   label: '${widget.resource.durationMinutes} min',
+                            // ),
+                            // const SizedBox(width: AppSpacing.md),
+                            // _InfoChip(
+                            //   icon:  Icons.description_outlined,
+                            //   label: '${widget.resource.pages} páginas',
+                            // ),
                           ],
                         ),
                         const SizedBox(height: AppSpacing.md),
